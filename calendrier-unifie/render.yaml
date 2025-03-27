@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: calendrier-frontend
+    env: static
+    staticPublishPath: dist
+    buildCommand: npm run build
