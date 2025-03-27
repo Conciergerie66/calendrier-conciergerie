@@ -1,4 +1,3 @@
-// 📁 App.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './App.css';
@@ -8,8 +7,12 @@ const App = () => {
   const [logements, setLogements] = useState([]);
   const [offset, setOffset] = useState(0);
 
+  // Récupération de l'URL de l'API depuis les variables d'environnement
+  const API_URL = process.env.VITE_API_URL || "https://calendrier-conciergerie.onrender.com"; // URL de ton backend sur Render
+
   useEffect(() => {
-    axios.get('http://localhost:3001/reservations')
+    // Utilisation de l'API_URL pour faire la requête GET
+    axios.get(`${API_URL}/reservations`)
       .then(res => {
         setReservations(res.data);
 
@@ -61,26 +64,25 @@ const App = () => {
         <button onClick={() => setOffset(offset + 30)}>→ Mois suivant</button>
       </div>
 
-  {/* Ligne des jours (lun, mar, …) */}
-<div className="header-row">
-  <div className="header-cell logement-title"></div>
-  {days.map((day, i) => (
-    <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
-      {day.short}
-    </div>
-  ))}
-</div>
+      {/* Ligne des jours (lun, mar, …) */}
+      <div className="header-row">
+        <div className="header-cell logement-title"></div>
+        {days.map((day, i) => (
+          <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
+            {day.short}
+          </div>
+        ))}
+      </div>
 
-{/* Ligne des dates (04-01, 04-02, …) */}
-<div className="header-row">
-  <div className="header-cell logement-title">Logement</div>
-  {days.map((day, i) => (
-    <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
-      {day.full.slice(5)}
-    </div>
-  ))}
-</div>
-
+      {/* Ligne des dates (04-01, 04-02, …) */}
+      <div className="header-row">
+        <div className="header-cell logement-title">Logement</div>
+        {days.map((day, i) => (
+          <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
+            {day.full.slice(5)}
+          </div>
+        ))}
+      </div>
 
       {logements.map((logement, i) => (
         <div className="row" key={i}>
