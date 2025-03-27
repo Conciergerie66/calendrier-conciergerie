@@ -1,0 +1,85 @@
+.calendar {
+  font-family: sans-serif;
+  font-size: 14px;
+  padding: 10px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.header-row, .row {
+  display: flex;
+}
+
+.header-cell, .cell {
+  width: 40px; /* ↑ agrandi */
+  min-width: 40px;
+  height: 40px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 40px;
+  font-size: 12px;
+}
+
+.logement-title {
+  min-width: 180px;
+  max-width: 180px;
+  font-weight: bold;
+  background-color: #f8f8f8;
+  padding-left: 5px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logement-name {
+  min-width: 180px;
+  max-width: 180px;
+  background-color: #fafafa;
+  padding-left: 5px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.airbnb {
+  background-color: rgba(255, 0, 0, 0.5);
+}
+
+.booking {
+  background-color: rgba(0, 0, 255, 0.5);
+}
+/* Coins arrondis pour début et fin de réservation */
+.cell.start {
+  border-top-left-radius: 50%;
+  border-bottom-left-radius: 50%;
+}
+
+.cell.end {
+  border-top-right-radius: 50%;
+  border-bottom-right-radius: 50%;
+}
+
+.guest-name {
+  font-size: 10px;
+  color: #000;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.sunday {
+  background-color: rgba(0, 255, 0, 0.2);
+}
