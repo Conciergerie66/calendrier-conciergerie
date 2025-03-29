@@ -7,11 +7,9 @@ const App = () => {
   const [logements, setLogements] = useState([]);
   const [offset, setOffset] = useState(0);
 
-  // Récupération de l'URL de l'API depuis les variables d'environnement
-  const API_URL = process.env.VITE_API_URL || "https://calendrier-conciergerie.onrender.com"; // URL de ton backend sur Render
+  const API_URL = process.env.VITE_API_URL || "https://calendrier-conciergerie.onrender.com";
 
   useEffect(() => {
-    // Utilisation de l'API_URL pour faire la requête GET
     axios.get(`${API_URL}/reservations`)
       .then(res => {
         setReservations(res.data);
@@ -52,7 +50,23 @@ const App = () => {
       r.logementKey === logementKey &&
       r.source === source &&
       new Date(date) >= new Date(r.start) &&
-      new Date(date) < new Date(r.end)
+      new Date(date) <= new Date(r.end)
+    );
+  };
+
+  const isEntry = (logementKey, date, source) => {
+    return reservations.some(r =>
+      r.logementKey === logementKey &&
+      r.source === source &&
+      new Date(date).toDateString() === new Date(r.start).toDateString()
+    );
+  };
+
+  const isExit = (logementKey, date, source) => {
+    return reservations.some(r =>
+      r.logementKey === logementKey &&
+      r.source === source &&
+      new Date(date).toDateString() === new Date(r.end).toDateString()
     );
   };
 
@@ -91,28 +105,21 @@ const App = () => {
             const isAirbnb = isReserved(logement.logementKey, day.full, 'airbnb');
             const isBooking = isReserved(logement.logementKey, day.full, 'booking');
 
-            const prevDay = days[j - 1]?.full;
-            const nextDay = days[j + 1]?.full;
-
-            const isStartAirbnb = isAirbnb && !isReserved(logement.logementKey, prevDay, 'airbnb');
-            const isEndAirbnb = isAirbnb && !isReserved(logement.logementKey, nextDay, 'airbnb');
-
-            const isStartBooking = isBooking && !isReserved(logement.logementKey, prevDay, 'booking');
-            const isEndBooking = isBooking && !isReserved(logement.logementKey, nextDay, 'booking');
-
             const classNames = [
               'cell',
               isAirbnb ? 'airbnb' : '',
               isBooking ? 'booking' : '',
-              isStartAirbnb || isStartBooking ? 'start' : '',
-              isEndAirbnb || isEndBooking ? 'end' : '',
+              isEntry(logement.logementKey, day.full, 'airbnb') ? 'entry-airbnb' : '',
+              isExit(logement.logementKey, day.full, 'airbnb') ? 'exit-airbnb' : '',
+              isEntry(logement.logementKey, day.full, 'booking') ? 'entry-booking' : '',
+              isExit(logement.logementKey, day.full, 'booking') ? 'exit-booking' : '',
               day.isSunday ? 'sunday' : ''
             ].join(' ');
 
             return (
               <div className={classNames} key={j}>
-                {isStartAirbnb && 'Airbnb'}
-                {isStartBooking && 'Réservé'}
+                {isEntry(logement.logementKey, day.full, 'airbnb') && 'Airbnb'}
+                {isEntry(logement.logementKey, day.full, 'booking') && 'Réservé'}
               </div>
             );
           })}

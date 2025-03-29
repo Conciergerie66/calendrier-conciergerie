@@ -1,85 +1,78 @@
-.calendar {
-  font-family: sans-serif;
-  font-size: 14px;
-  padding: 10px;
-  overflow-x: auto;
-  max-width: 100%;
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #fff;
 }
 
-.header-row, .row {
+.calendar {
+  overflow-x: auto;
+}
+
+.header-row,
+.row {
   display: flex;
 }
 
-.header-cell, .cell {
-  width: 40px; /* ↑ agrandi */
-  min-width: 40px;
-  height: 40px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  text-align: center;
-  line-height: 40px;
+.header-cell,
+.cell {
+  border: 1px solid #ddd;
+  min-width: 60px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .logement-title {
-  min-width: 180px;
-  max-width: 180px;
+  width: 200px;
   font-weight: bold;
-  background-color: #f8f8f8;
-  padding-left: 5px;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  background-color: #f0f0f0;
 }
 
 .logement-name {
-  min-width: 180px;
-  max-width: 180px;
-  background-color: #fafafa;
-  padding-left: 5px;
+  width: 200px;
+  background-color: #f9f9f9;
+  font-weight: bold;
+  padding-left: 8px;
+  font-size: 13px;
   display: flex;
-  align-items: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.airbnb {
-  background-color: rgba(255, 0, 0, 0.5);
-}
-
-.booking {
-  background-color: rgba(0, 0, 255, 0.5);
-}
-/* Coins arrondis pour début et fin de réservation */
-.cell.start {
-  border-top-left-radius: 50%;
-  border-bottom-left-radius: 50%;
-}
-
-.cell.end {
-  border-top-right-radius: 50%;
-  border-bottom-right-radius: 50%;
-}
-
-.guest-name {
-  font-size: 10px;
-  color: #000;
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.header-cell {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
 }
 
 .sunday {
-  background-color: rgba(0, 255, 0, 0.2);
+  background-color: #d4fdd4;
+}
+
+/* Plein rouge Airbnb */
+.airbnb {
+  background-color: #ffcccc;
+  color: #000;
+}
+
+/* Plein bleu Booking */
+.booking {
+  background-color: #ccccff;
+  color: #000;
+}
+
+/* Demi-haut rouge (entrée Airbnb) */
+.entry-airbnb {
+  background: linear-gradient(to bottom, #ff9999 50%, transparent 50%);
+}
+
+/* Demi-bas rouge (sortie Airbnb) */
+.exit-airbnb {
+  background: linear-gradient(to top, #ff9999 50%, transparent 50%);
+}
+
+/* Demi-haut bleu (entrée Booking) */
+.entry-booking {
+  background: linear-gradient(to bottom, #9999ff 50%, transparent 50%);
+}
+
+/* Demi-bas bleu (sortie Booking) */
+.exit-booking {
+  background: linear-gradient(to top, #9999ff 50%, transparent 50%);
 }
