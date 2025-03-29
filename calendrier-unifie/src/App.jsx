@@ -45,24 +45,31 @@ const App = () => {
 
   const days = getNext30Days();
 
+  // 🔍 Exclut les faux blocs de 1 jour sans guest
+  const isFakeBlock = (r) => {
+    const sameDay = new Date(r.start).toDateString() === new Date(r.end).toDateString();
+    const shortStay = (new Date(r.end) - new Date(r.start)) <= 1000 * 60 * 60 * 24;
+    const noGuest = !r.guest || r.guest.trim() === '';
+    return (sameDay || shortStay) && noGuest;
+  };
+
   const isReserved = (logementKey, date, source) => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
       r.source === source &&
       r.start && r.end &&
-      new Date(r.start).toDateString() !== new Date(r.end).toDateString() &&
+      !isFakeBlock(r) &&
       new Date(date) >= new Date(r.start) &&
       new Date(date) <= new Date(r.end)
     );
   };
-  
 
   const isEntry = (logementKey, date, source) => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
       r.source === source &&
       r.start && r.end &&
-      new Date(r.start).toDateString() !== new Date(r.end).toDateString() &&
+      !isFakeBlock(r) &&
       new Date(date).toDateString() === new Date(r.start).toDateString()
     );
   };
@@ -72,10 +79,8 @@ const App = () => {
       r.logementKey === logementKey &&
       r.source === source &&
       r.start && r.end &&
-      new Date(r.start).toDateString() !== new Date(r.end).toDateString() &&
-      new Date(date).toDateString() === new Date(r.end).toDateString() &&
-      new Date(date) >= new Date(r.start) &&
-      new Date(date) <= new Date(r.end)
+      !isFakeBlock(r) &&
+      new Date(date).toDateString() === new Date(r.end).toDateString()
     );
   };
 
@@ -125,11 +130,11 @@ const App = () => {
               day.isSunday ? 'sunday' : ''
             ].join(' ');
 
-            const tooltip = isEntry(logement.logementKey, day.full, 'airbnb')
-              ? 'Airbnb'
-              : isEntry(logement.logementKey, day.full, 'booking')
-              ? 'Réservé'
-              : '';
+            // tooltip sur survol
+            const tooltip =
+              isEntry(logement.logementKey, day.full, 'airbnb') ? 'Airbnb' :
+              isEntry(logement.logementKey, day.full, 'booking') ? 'Réservé' :
+              '';
 
             return (
               <div className={classNames} key={j} title={tooltip}></div>
