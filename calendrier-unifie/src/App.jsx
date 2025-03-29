@@ -50,10 +50,12 @@ const App = () => {
       r.logementKey === logementKey &&
       r.source === source &&
       r.start && r.end &&
+      new Date(r.start).toDateString() !== new Date(r.end).toDateString() &&
       new Date(date) >= new Date(r.start) &&
       new Date(date) <= new Date(r.end)
     );
   };
+  
 
   const isEntry = (logementKey, date, source) => {
     return reservations.some(r =>
