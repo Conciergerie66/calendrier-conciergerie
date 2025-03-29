@@ -47,11 +47,15 @@ const App = () => {
 
   // 🔍 Exclut les faux blocs de 1 jour sans guest
   const isFakeBlock = (r) => {
-    const sameDay = new Date(r.start).toDateString() === new Date(r.end).toDateString();
-    const shortStay = (new Date(r.end) - new Date(r.start)) <= 1000 * 60 * 60 * 24;
-    const noGuest = !r.guest || r.guest.trim() === '';
-    return (sameDay || shortStay) && noGuest;
+    const duration = new Date(r.end) - new Date(r.start);
+    const guest = r.guest ? r.guest.toLowerCase().trim() : '';
+  
+    const isShort = duration < 1000 * 60 * 60 * 20; // moins de 20h
+    const isGenericGuest = guest === '' || guest === 'not available' || guest === 'non disponible';
+  
+    return isShort && isGenericGuest;
   };
+  
 
   const isReserved = (logementKey, date, source) => {
     return reservations.some(r =>
