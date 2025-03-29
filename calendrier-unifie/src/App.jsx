@@ -66,9 +66,11 @@ const App = () => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
       r.source === source &&
-      new Date(date).toDateString() === new Date(r.end).toDateString()
+      new Date(date).toDateString() === new Date(r.end).toDateString() &&
+      new Date(date) >= new Date(r.start) && new Date(date) <= new Date(r.end)
     );
   };
+  
 
   return (
     <div className="calendar">

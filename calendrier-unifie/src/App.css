@@ -45,34 +45,34 @@ body {
   background-color: #d4fdd4;
 }
 
-/* Plein rouge Airbnb */
+/* Plein rouge vif Airbnb */
 .airbnb {
-  background-color: #ffcccc;
-  color: #000;
+  background-color: #ff4d4d;
+  color: #fff;
 }
 
-/* Plein bleu Booking */
+/* Plein bleu vif Booking */
 .booking {
-  background-color: #ccccff;
-  color: #000;
+  background-color: #4d79ff;
+  color: #fff;
 }
 
 /* Demi-haut rouge (entrée Airbnb) */
 .entry-airbnb {
-  background: linear-gradient(to bottom, #ff9999 50%, transparent 50%);
+  background: linear-gradient(to bottom, #ff4d4d 50%, transparent 50%);
 }
 
 /* Demi-bas rouge (sortie Airbnb) */
 .exit-airbnb {
-  background: linear-gradient(to top, #ff9999 50%, transparent 50%);
+  background: linear-gradient(to top, #ff4d4d 50%, transparent 50%);
 }
 
 /* Demi-haut bleu (entrée Booking) */
 .entry-booking {
-  background: linear-gradient(to bottom, #9999ff 50%, transparent 50%);
+  background: linear-gradient(to bottom, #4d79ff 50%, transparent 50%);
 }
 
 /* Demi-bas bleu (sortie Booking) */
 .exit-booking {
-  background: linear-gradient(to top, #9999ff 50%, transparent 50%);
+  background: linear-gradient(to top, #4d79ff 50%, transparent 50%);
 }
