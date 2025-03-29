@@ -92,3 +92,9 @@ body {
 .exit-booking {
   background: linear-gradient(to top, #4d79ff 50%, transparent 50%);
 }
+
+/* Blocage manuel (non réservable) */
+.blocked {
+  background-color: #222;
+  color: transparent;
+}

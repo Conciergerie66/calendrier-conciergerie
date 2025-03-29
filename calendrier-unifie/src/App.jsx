@@ -45,17 +45,23 @@ const App = () => {
 
   const days = getNext30Days();
 
-  // 🔍 Exclut les faux blocs de 1 jour sans guest
   const isFakeBlock = (r) => {
     const duration = new Date(r.end) - new Date(r.start);
     const guest = r.guest ? r.guest.toLowerCase().trim() : '';
-  
-    const isShort = duration < 1000 * 60 * 60 * 20; // moins de 20h
+    const isShort = duration < 1000 * 60 * 60 * 20;
     const isGenericGuest = guest === '' || guest === 'not available' || guest === 'non disponible';
-  
     return isShort && isGenericGuest;
   };
-  
+
+  const isBlocked = (logementKey, date) => {
+    return reservations.some(r =>
+      r.logementKey === logementKey &&
+      r.start && r.end &&
+      isFakeBlock(r) &&
+      new Date(date) >= new Date(r.start) &&
+      new Date(date) <= new Date(r.end)
+    );
+  };
 
   const isReserved = (logementKey, date, source) => {
     return reservations.some(r =>
@@ -96,7 +102,6 @@ const App = () => {
         <button onClick={() => setOffset(offset + 30)}>→ Mois suivant</button>
       </div>
 
-      {/* Ligne des jours (lun, mar, …) */}
       <div className="header-row">
         <div className="header-cell logement-title"></div>
         {days.map((day, i) => (
@@ -106,7 +111,6 @@ const App = () => {
         ))}
       </div>
 
-      {/* Ligne des dates (04-01, 04-02, …) */}
       <div className="header-row">
         <div className="header-cell logement-title">Logement</div>
         {days.map((day, i) => (
@@ -125,20 +129,21 @@ const App = () => {
 
             const classNames = [
               'cell',
-              isAirbnb ? 'airbnb' : '',
-              isBooking ? 'booking' : '',
-              isEntry(logement.logementKey, day.full, 'airbnb') ? 'entry-airbnb' : '',
-              isExit(logement.logementKey, day.full, 'airbnb') ? 'exit-airbnb' : '',
-              isEntry(logement.logementKey, day.full, 'booking') ? 'entry-booking' : '',
-              isExit(logement.logementKey, day.full, 'booking') ? 'exit-booking' : '',
+              isBlocked(logement.logementKey, day.full) ? 'blocked' : '',
+              !isBlocked(logement.logementKey, day.full) && isAirbnb ? 'airbnb' : '',
+              !isBlocked(logement.logementKey, day.full) && isBooking ? 'booking' : '',
+              !isBlocked(logement.logementKey, day.full) && isEntry(logement.logementKey, day.full, 'airbnb') ? 'entry-airbnb' : '',
+              !isBlocked(logement.logementKey, day.full) && isExit(logement.logementKey, day.full, 'airbnb') ? 'exit-airbnb' : '',
+              !isBlocked(logement.logementKey, day.full) && isEntry(logement.logementKey, day.full, 'booking') ? 'entry-booking' : '',
+              !isBlocked(logement.logementKey, day.full) && isExit(logement.logementKey, day.full, 'booking') ? 'exit-booking' : '',
               day.isSunday ? 'sunday' : ''
             ].join(' ');
 
-            // tooltip sur survol
-            const tooltip =
-              isEntry(logement.logementKey, day.full, 'airbnb') ? 'Airbnb' :
-              isEntry(logement.logementKey, day.full, 'booking') ? 'Réservé' :
-              '';
+            const tooltip = isBlocked(logement.logementKey, day.full)
+              ? 'Blocage'
+              : isEntry(logement.logementKey, day.full, 'airbnb') ? 'Airbnb'
+              : isEntry(logement.logementKey, day.full, 'booking') ? 'Réservé'
+              : '';
 
             return (
               <div className={classNames} key={j} title={tooltip}></div>
