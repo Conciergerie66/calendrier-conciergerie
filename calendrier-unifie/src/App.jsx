@@ -49,6 +49,7 @@ const App = () => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
       r.source === source &&
+      r.start && r.end &&
       new Date(date) >= new Date(r.start) &&
       new Date(date) <= new Date(r.end)
     );
@@ -58,6 +59,8 @@ const App = () => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
       r.source === source &&
+      r.start && r.end &&
+      new Date(r.start).toDateString() !== new Date(r.end).toDateString() &&
       new Date(date).toDateString() === new Date(r.start).toDateString()
     );
   };
@@ -66,11 +69,13 @@ const App = () => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
       r.source === source &&
+      r.start && r.end &&
+      new Date(r.start).toDateString() !== new Date(r.end).toDateString() &&
       new Date(date).toDateString() === new Date(r.end).toDateString() &&
-      new Date(date) >= new Date(r.start) && new Date(date) <= new Date(r.end)
+      new Date(date) >= new Date(r.start) &&
+      new Date(date) <= new Date(r.end)
     );
   };
-  
 
   return (
     <div className="calendar">
@@ -118,11 +123,14 @@ const App = () => {
               day.isSunday ? 'sunday' : ''
             ].join(' ');
 
+            const tooltip = isEntry(logement.logementKey, day.full, 'airbnb')
+              ? 'Airbnb'
+              : isEntry(logement.logementKey, day.full, 'booking')
+              ? 'Réservé'
+              : '';
+
             return (
-              <div className={classNames} key={j}>
-                {isEntry(logement.logementKey, day.full, 'airbnb') && 'Airbnb'}
-                {isEntry(logement.logementKey, day.full, 'booking') && 'Réservé'}
-              </div>
+              <div className={classNames} key={j} title={tooltip}></div>
             );
           })}
         </div>

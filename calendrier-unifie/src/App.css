@@ -1,3 +1,8 @@
+/* Corrige les décalages de largeur et padding */
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Arial, sans-serif;
   margin: 20px;
@@ -6,6 +11,7 @@ body {
 
 .calendar {
   overflow-x: auto;
+  width: 100%;
 }
 
 .header-row,
@@ -13,24 +19,33 @@ body {
   display: flex;
 }
 
+/* Cellules standard : jour + date + cases */
 .header-cell,
 .cell {
   border: 1px solid #ddd;
-  min-width: 60px;
+  width: 60px;
   height: 32px;
+  font-size: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
   white-space: nowrap;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* Colonne logement (titre) */
 .logement-title {
   width: 200px;
   font-weight: bold;
   background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Colonne logement (nom ligne) */
 .logement-name {
   width: 200px;
   background-color: #f9f9f9;
@@ -41,6 +56,7 @@ body {
   align-items: center;
 }
 
+/* Dimanche */
 .sunday {
   background-color: #d4fdd4;
 }
@@ -48,13 +64,13 @@ body {
 /* Plein rouge vif Airbnb */
 .airbnb {
   background-color: #ff4d4d;
-  color: #fff;
+  color: transparent; /* on cache le texte pour éviter les décalages */
 }
 
 /* Plein bleu vif Booking */
 .booking {
   background-color: #4d79ff;
-  color: #fff;
+  color: transparent;
 }
 
 /* Demi-haut rouge (entrée Airbnb) */
