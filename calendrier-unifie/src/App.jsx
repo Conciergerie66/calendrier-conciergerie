@@ -45,6 +45,7 @@ const App = () => {
 
   const days = getNext30Days();
 
+  // Fonction pour identifier les "faux blocages" (courtes durées, nom générique)
   const isFakeBlock = (r) => {
     const duration = new Date(r.end) - new Date(r.start);
     const guest = r.guest ? r.guest.toLowerCase().trim() : '';
@@ -53,12 +54,16 @@ const App = () => {
     return isShort && isGenericGuest;
   };
 
+  // Fonction pour identifier les blocages manuels Airbnb (basée sur le fichier iCal)
   const isManuallyBlocked = (reservation) => {
-    // À IMPLEMENTER: Logique pour identifier les blocages manuels Airbnb
-    // Exemple (à adapter selon la structure de tes données):
-    return reservation.source === 'airbnb' && reservation.isManualBlock === true;
+    return (
+      reservation.source === 'airbnb' &&
+      reservation.summary.includes('Not available') &&
+      !reservation.description
+    );
   };
 
+  // Fonction pour déterminer si une date est bloquée
   const isBlocked = (logementKey, date) => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
@@ -69,6 +74,7 @@ const App = () => {
     );
   };
 
+  // Fonction pour déterminer si une date est réservée (Airbnb ou Booking)
   const isReserved = (logementKey, date, source) => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
@@ -81,6 +87,7 @@ const App = () => {
     );
   };
 
+  // Fonction pour déterminer si une date est une entrée (Airbnb ou Booking)
   const isEntry = (logementKey, date, source) => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
@@ -92,6 +99,7 @@ const App = () => {
     );
   };
 
+  // Fonction pour déterminer si une date est une sortie (Airbnb ou Booking)
   const isExit = (logementKey, date, source) => {
     return reservations.some(r =>
       r.logementKey === logementKey &&
