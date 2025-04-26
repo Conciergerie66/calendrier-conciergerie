@@ -23,7 +23,7 @@ if (fs.existsSync(nomsPath)) {
 }
 
 let sources = [
-  ...Array.from({ length: 30 }, (_, i) => {
+  ...Array.from({ length: 40 }, (_, i) => {
     const index = i + 1;
     return [
       {
