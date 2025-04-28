@@ -1,106 +1,106 @@
 /* Corrige les décalages de largeur et padding */
 * {
-    box-sizing: border-box;
-  }
-  
-  body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #fff;
-  }
-  
-  .calendar {
-    overflow-x: auto;
-    width: 100%;
-  }
-  
-  .header-row,
-  .row {
-    display: flex;
-  }
-  
-  /* Cellules standard : jour + date + cases */
-  .header-cell,
-  .cell {
-    border: 1px solid #ddd;
-    width: 60px;
-    height: 32px;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    padding: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  
-  /* Colonne logement (titre) */
-  .logement-title {
-    width: 200px;
-    font-weight: bold;
-    background-color: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  /* Colonne logement (nom ligne) */
-  .logement-name {
-    width: 200px;
-    background-color: #f9f9f9;
-    font-weight: bold;
-    padding-left: 8px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-  }
-  
-  /* Dimanche */
-  .sunday {
-    background-color: #d4fdd4;
-  }
-  
-  /* Plein rouge vif Airbnb */
-  .airbnb {
-    background-color: #ff4d4d;
-    color: transparent; /* on cache le texte pour éviter les décalages */
-  }
-  
-  /* Plein bleu vif Booking */
-  .booking {
-    background-color: #4d79ff;
-    color: transparent;
-  }
-  
-  /* Demi-haut rouge (entrée Airbnb) */
-  .entry-airbnb {
-    background: linear-gradient(to bottom, #ff4d4d 50%, transparent 50%);
-  }
-  
-  /* Demi-bas rouge (sortie Airbnb) */
-  .exit-airbnb {
-    background: linear-gradient(to top, #ff4d4d 50%, transparent 50%);
-  }
-  
-  /* Demi-haut bleu (entrée Booking) */
-  .entry-booking {
-    background: linear-gradient(to bottom, #4d79ff 50%, transparent 50%);
-  }
-  
-  /* Demi-bas bleu (sortie Booking) */
-  .exit-booking {
-    background: linear-gradient(to top, #4d79ff 50%, transparent 50%);
-  }
-  
-  /* Blocage manuel (non réservable) - NOUVEAU */
-  .blocked-manual {
-    background-color: black !important;
-    color: transparent; /* Optionnel: si tu veux une couleur de texte par défaut */
-  }
-  
-  /* Blocage (tel que tu l'avais - potentiellement les "faux blocages") */
-  .blocked {
-    background-color: #222;
-    color: transparent;
-  }
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #fff;
+}
+
+.calendar {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.header-row,
+.row {
+  display: flex;
+}
+
+/* Cellules standard : jour + date + cases */
+.header-cell,
+.cell {
+  border: 1px solid #ddd;
+  width: 60px;
+  height: 32px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Colonne logement (titre) */
+.logement-title {
+  width: 200px;
+  font-weight: bold;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Colonne logement (nom ligne) */
+.logement-name {
+  width: 200px;
+  background-color: #f9f9f9;
+  font-weight: bold;
+  padding-left: 8px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+/* Dimanche */
+.sunday {
+  background-color: #d4fdd4;
+}
+
+/* Plein rouge vif Airbnb */
+.airbnb {
+  background-color: #ff4d4d;
+  color: transparent; /* on cache le texte pour éviter les décalages */
+}
+
+/* Plein bleu vif Booking */
+.booking {
+  background-color: #4d79ff;
+  color: transparent;
+}
+
+/* Demi-haut rouge (entrée Airbnb) */
+.entry-airbnb {
+  background: linear-gradient(to bottom, #ff4d4d 50%, transparent 50%);
+}
+
+/* Demi-bas rouge (sortie Airbnb) */
+.exit-airbnb {
+  background: linear-gradient(to top, #ff4d4d 50%, transparent 50%);
+}
+
+/* Demi-haut bleu (entrée Booking) */
+.entry-booking {
+  background: linear-gradient(to bottom, #4d79ff 50%, transparent 50%);
+}
+
+/* Demi-bas bleu (sortie Booking) */
+.exit-booking {
+  background: linear-gradient(to top, #4d79ff 50%, transparent 50%);
+}
+
+/* Blocage manuel (non réservable) - NOUVEAU */
+.blocked-manual {
+  background-color: black !important;
+  color: transparent; /* Optionnel: si tu veux une couleur de texte par défaut */
+}
+
+/* Blocage (tel que tu l'avais - potentiellement les "faux blocages") */
+.blocked {
+  background-color: #222;
+  color: transparent;
+}
