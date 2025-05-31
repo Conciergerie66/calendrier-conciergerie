@@ -1,4 +1,3 @@
-/* 🧼 BASE */
 * {
   box-sizing: border-box;
 }
@@ -19,7 +18,6 @@ body {
   display: flex;
 }
 
-/* 📅 Cellules standard : jour + date + cases */
 .header-cell,
 .cell {
   border: 1px solid #ddd;
@@ -32,10 +30,9 @@ body {
   white-space: nowrap;
   padding: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
+  position: relative;
 }
 
-/* 🏠 Colonne logement (titre) */
 .logement-title {
   width: 200px;
   font-weight: bold;
@@ -45,7 +42,6 @@ body {
   justify-content: center;
 }
 
-/* 🏠 Colonne logement (nom ligne) */
 .logement-name {
   width: 200px;
   background-color: #f9f9f9;
@@ -56,12 +52,10 @@ body {
   align-items: center;
 }
 
-/* ☀️ Dimanche */
 .sunday {
   background-color: #d4fdd4;
 }
 
-/* 📌 Réservations Airbnb / Booking */
 .airbnb {
   background-color: #ff4d4d;
   color: transparent;
@@ -72,7 +66,6 @@ body {
   color: transparent;
 }
 
-/* ↕️ Entrées / Sorties Airbnb */
 .entry-airbnb {
   background: linear-gradient(to bottom, #ff4d4d 50%, transparent 50%);
 }
@@ -81,7 +74,6 @@ body {
   background: linear-gradient(to top, #ff4d4d 50%, transparent 50%);
 }
 
-/* ↕️ Entrées / Sorties Booking */
 .entry-booking {
   background: linear-gradient(to bottom, #4d79ff 50%, transparent 50%);
 }
@@ -90,31 +82,26 @@ body {
   background: linear-gradient(to top, #4d79ff 50%, transparent 50%);
 }
 
-/* ⛔ Blocage manuel (noir) */
 .blocked-manual {
   background-color: black !important;
   color: transparent;
 }
 
-/* ⛔ Blocage automatique */
 .blocked {
   background-color: #222;
   color: transparent;
 }
 
-/* ✅ Ménage (cleaning) */
-.cleaning {
-  background-color: #c7f8cc !important;
-  color: #000 !important;
-  font-size: 11px;
-  font-weight: bold;
-  text-align: center;
-  padding: 2px;
-  line-height: 1.1;
-}
-
-.cell-label {
-  display: block;
-  font-size: 10px;
-  white-space: normal;
+/* ✅ Badge de ménage (icône ou emoji de prestataire) */
+.cleaning-badge {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+  padding: 0px 2px;
+  z-index: 10;
+  pointer-events: none;
+  color: #000;
 }

@@ -10,20 +10,21 @@ const App = () => {
   const API_URL = process.env.VITE_API_URL || "https://calendrier-conciergerie.onrender.com";
 
   useEffect(() => {
-    axios.get(`${API_URL}/reservations`).then(res => {
-      setReservations(res.data);
+    axios.get(`${API_URL}/reservations`)
+      .then(res => {
+        setReservations(res.data);
 
-      const unique = [];
-      const map = new Map();
-      res.data.forEach(item => {
-        const cleanName = item.name?.replace(/\s+/g, ' ').trim() || 'Logement';
-        if (!map.has(item.logementKey)) {
-          map.set(item.logementKey, cleanName);
-          unique.push({ logementKey: item.logementKey, name: cleanName });
-        }
+        const unique = [];
+        const map = new Map();
+        res.data.forEach(item => {
+          const cleanName = item.name?.replace(/\s+/g, ' ').trim() || 'Logement';
+          if (!map.has(item.logementKey)) {
+            map.set(item.logementKey, cleanName);
+            unique.push({ logementKey: item.logementKey, name: cleanName });
+          }
+        });
+        setLogements(unique);
       });
-      setLogements(unique);
-    });
   }, []);
 
   const getNext30Days = () => {
@@ -47,16 +48,23 @@ const App = () => {
   const isFakeBlock = (r) => {
     const duration = new Date(r.end) - new Date(r.start);
     const guest = r.guest ? r.guest.toLowerCase().trim() : '';
-    return duration < 1000 * 60 * 60 * 20 && (guest === '' || guest === 'not available' || guest === 'non disponible');
+    const isShort = duration < 1000 * 60 * 60 * 20;
+    const isGenericGuest = guest === '' || guest === 'not available' || guest === 'non disponible';
+    return isShort && isGenericGuest;
   };
 
-  const isManuallyBlocked = (r) => {
-    return r?.source === 'airbnb' && r?.summary?.includes('Not available') && !r?.description;
+  const isManuallyBlocked = (reservation) => {
+    return (
+      reservation?.source === 'airbnb' &&
+      reservation?.summary?.includes('Not available') &&
+      !reservation?.description
+    );
   };
 
   const isBlocked = (logementKey, date) => {
     return reservations.some(r =>
-      r.logementKey === logementKey &&
+      r?.logementKey === logementKey &&
+      r?.start && r?.end &&
       new Date(date) >= new Date(r.start) &&
       new Date(date) <= new Date(r.end) &&
       (isFakeBlock(r) || isManuallyBlocked(r))
@@ -65,8 +73,9 @@ const App = () => {
 
   const isReserved = (logementKey, date, source) => {
     return reservations.some(r =>
-      r.logementKey === logementKey &&
-      r.source === source &&
+      r?.logementKey === logementKey &&
+      r?.source === source &&
+      r?.start && r?.end &&
       !isFakeBlock(r) &&
       !isManuallyBlocked(r) &&
       new Date(date) >= new Date(r.start) &&
@@ -76,28 +85,44 @@ const App = () => {
 
   const isEntry = (logementKey, date, source) => {
     return reservations.some(r =>
-      r.logementKey === logementKey &&
-      r.source === source &&
-      new Date(date).toDateString() === new Date(r.start).toDateString() &&
-      !isFakeBlock(r) && !isManuallyBlocked(r)
+      r?.logementKey === logementKey &&
+      r?.source === source &&
+      r?.start && r?.end &&
+      !isFakeBlock(r) &&
+      !isManuallyBlocked(r) &&
+      new Date(date).toDateString() === new Date(r.start).toDateString()
     );
   };
 
   const isExit = (logementKey, date, source) => {
     return reservations.some(r =>
-      r.logementKey === logementKey &&
-      r.source === source &&
-      new Date(date).toDateString() === new Date(r.end).toDateString() &&
-      !isFakeBlock(r) && !isManuallyBlocked(r)
+      r?.logementKey === logementKey &&
+      r?.source === source &&
+      r?.start && r?.end &&
+      !isFakeBlock(r) &&
+      !isManuallyBlocked(r) &&
+      new Date(date).toDateString() === new Date(r.end).toDateString()
     );
   };
 
-  const isCleaningTask = (logementKey, date) => {
-    return reservations.find(r =>
-      r.logementKey === logementKey &&
-      r.source === 'cleaning' &&
+  const getCleaningBadge = (logementKey, date) => {
+    const task = reservations.find(r =>
+      r?.logementKey === logementKey &&
+      r?.source === 'cleaning' &&
+      r?.start &&
       new Date(date).toDateString() === new Date(r.start).toDateString()
     );
+    if (!task) return null;
+
+    const badges = {
+      "cleansud": "☀️",
+      "portos": "🐟",
+      "naira": "💇",
+      "proconcept": "🥊"
+    };
+
+    const key = task.guest?.toLowerCase().trim();
+    return badges[key] || "🧼";
   };
 
   return (
@@ -111,14 +136,18 @@ const App = () => {
       <div className="header-row">
         <div className="header-cell logement-title"></div>
         {days.map((day, i) => (
-          <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>{day.short}</div>
+          <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
+            {day.short}
+          </div>
         ))}
       </div>
 
       <div className="header-row">
         <div className="header-cell logement-title">Logement</div>
         {days.map((day, i) => (
-          <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>{day.full.slice(5)}</div>
+          <div key={i} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
+            {day.full.slice(5)}
+          </div>
         ))}
       </div>
 
@@ -128,20 +157,21 @@ const App = () => {
           {days.map((day, j) => {
             const isAirbnb = isReserved(logement.logementKey, day.full, 'airbnb');
             const isBooking = isReserved(logement.logementKey, day.full, 'booking');
-            const cleaningTask = isCleaningTask(logement.logementKey, day.full);
             const isCurrentlyBlocked = isBlocked(logement.logementKey, day.full);
-            const isManualBlock = isCurrentlyBlocked && reservations.some(r =>
-              r.logementKey === logement.logementKey &&
-              isManuallyBlocked(r) &&
-              new Date(day.full) >= new Date(r.start) &&
-              new Date(day.full) <= new Date(r.end)
+            const isManualBlockActive = isCurrentlyBlocked && reservations.some(
+              (r) =>
+                r?.logementKey === logement.logementKey &&
+                new Date(day.full) >= new Date(r.start) &&
+                new Date(day.full) <= new Date(r.end) &&
+                isManuallyBlocked(r)
             );
+
+            const cleaningBadge = getCleaningBadge(logement.logementKey, day.full);
 
             const classNames = [
               'cell',
-              cleaningTask ? 'cleaning' : '',
-              isManualBlock ? 'blocked-manual' : '',
-              isCurrentlyBlocked && !isManualBlock ? 'blocked' : '',
+              isManualBlockActive ? 'blocked-manual' : '',
+              isCurrentlyBlocked && !isManualBlockActive ? 'blocked' : '',
               !isCurrentlyBlocked && isAirbnb ? 'airbnb' : '',
               !isCurrentlyBlocked && isBooking ? 'booking' : '',
               !isCurrentlyBlocked && isEntry(logement.logementKey, day.full, 'airbnb') ? 'entry-airbnb' : '',
@@ -151,11 +181,9 @@ const App = () => {
               day.isSunday ? 'sunday' : ''
             ].join(' ');
 
-            const label = cleaningTask ? cleaningTask.guest : '';
-
             return (
-              <div className={classNames} key={j} title={label}>
-                {cleaningTask && <span className="cell-label">{label}</span>}
+              <div className={classNames} key={j} title={cleaningBadge ? `Ménage : ${cleaningBadge}` : ''}>
+                {cleaningBadge && <span className="cleaning-badge">{cleaningBadge}</span>}
               </div>
             );
           })}
