@@ -1,4 +1,4 @@
-/* Corrige les décalages de largeur et padding */
+/* 🧼 BASE */
 * {
   box-sizing: border-box;
 }
@@ -19,7 +19,7 @@ body {
   display: flex;
 }
 
-/* Cellules standard : jour + date + cases */
+/* 📅 Cellules standard : jour + date + cases */
 .header-cell,
 .cell {
   border: 1px solid #ddd;
@@ -35,7 +35,7 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Colonne logement (titre) */
+/* 🏠 Colonne logement (titre) */
 .logement-title {
   width: 200px;
   font-weight: bold;
@@ -45,7 +45,7 @@ body {
   justify-content: center;
 }
 
-/* Colonne logement (nom ligne) */
+/* 🏠 Colonne logement (nom ligne) */
 .logement-name {
   width: 200px;
   background-color: #f9f9f9;
@@ -56,51 +56,65 @@ body {
   align-items: center;
 }
 
-/* Dimanche */
+/* ☀️ Dimanche */
 .sunday {
   background-color: #d4fdd4;
 }
 
-/* Plein rouge vif Airbnb */
+/* 📌 Réservations Airbnb / Booking */
 .airbnb {
   background-color: #ff4d4d;
-  color: transparent; /* on cache le texte pour éviter les décalages */
+  color: transparent;
 }
 
-/* Plein bleu vif Booking */
 .booking {
   background-color: #4d79ff;
   color: transparent;
 }
 
-/* Demi-haut rouge (entrée Airbnb) */
+/* ↕️ Entrées / Sorties Airbnb */
 .entry-airbnb {
   background: linear-gradient(to bottom, #ff4d4d 50%, transparent 50%);
 }
 
-/* Demi-bas rouge (sortie Airbnb) */
 .exit-airbnb {
   background: linear-gradient(to top, #ff4d4d 50%, transparent 50%);
 }
 
-/* Demi-haut bleu (entrée Booking) */
+/* ↕️ Entrées / Sorties Booking */
 .entry-booking {
   background: linear-gradient(to bottom, #4d79ff 50%, transparent 50%);
 }
 
-/* Demi-bas bleu (sortie Booking) */
 .exit-booking {
   background: linear-gradient(to top, #4d79ff 50%, transparent 50%);
 }
 
-/* Blocage manuel (non réservable) - NOUVEAU */
+/* ⛔ Blocage manuel (noir) */
 .blocked-manual {
   background-color: black !important;
-  color: transparent; /* Optionnel: si tu veux une couleur de texte par défaut */
+  color: transparent;
 }
 
-/* Blocage (tel que tu l'avais - potentiellement les "faux blocages") */
+/* ⛔ Blocage automatique */
 .blocked {
   background-color: #222;
   color: transparent;
+}
+
+/* ✅ Ménage (cleaning) */
+.cleaning {
+  background-color: #c7f8cc !important;
+  color: #000 !important;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  padding: 2px;
+  line-height: 1.1;
+}
+
+.cell-label {
+  display: block;
+  font-size: 10px;
+  white-space: normal;
 }
