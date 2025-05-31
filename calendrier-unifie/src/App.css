@@ -95,8 +95,8 @@ body {
 }
 
 .blocked {
-  background-color: #222;
-  color: transparent;
+  background-color: transparent !important;
+  color: inherit;
 }
 
 /* ✅ Badge de ménage */
