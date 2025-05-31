@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './App.css';
@@ -10,21 +11,20 @@ const App = () => {
   const API_URL = process.env.VITE_API_URL || "https://calendrier-conciergerie.onrender.com";
 
   useEffect(() => {
-    axios.get(`${API_URL}/reservations`)
-      .then(res => {
-        setReservations(res.data);
+    axios.get(`${API_URL}/reservations`).then(res => {
+      setReservations(res.data);
 
-        const unique = [];
-        const map = new Map();
-        res.data.forEach(item => {
-          const cleanName = item.name?.replace(/\s+/g, ' ').trim() || 'Logement';
-          if (!map.has(item.logementKey)) {
-            map.set(item.logementKey, cleanName);
-            unique.push({ logementKey: item.logementKey, name: cleanName });
-          }
-        });
-        setLogements(unique);
+      const unique = [];
+      const map = new Map();
+      res.data.forEach(item => {
+        const cleanName = item.name?.replace(/\s+/g, ' ').trim() || 'Logement';
+        if (!map.has(item.logementKey)) {
+          map.set(item.logementKey, cleanName);
+          unique.push({ logementKey: item.logementKey, name: cleanName });
+        }
       });
+      setLogements(unique);
+    });
   }, []);
 
   const getNext30Days = () => {
@@ -48,17 +48,11 @@ const App = () => {
   const isFakeBlock = (r) => {
     const duration = new Date(r.end) - new Date(r.start);
     const guest = r.guest ? r.guest.toLowerCase().trim() : '';
-    const isShort = duration < 1000 * 60 * 60 * 20;
-    const isGenericGuest = guest === '' || guest === 'not available' || guest === 'non disponible';
-    return isShort && isGenericGuest;
+    return duration < 1000 * 60 * 60 * 20 && (!guest || ['not available', 'non disponible'].includes(guest));
   };
 
   const isManuallyBlocked = (reservation) => {
-    return (
-      reservation?.source === 'airbnb' &&
-      reservation?.summary?.includes('Not available') &&
-      !reservation?.description
-    );
+    return reservation?.source === 'airbnb' && reservation?.summary?.includes('Not available') && !reservation?.description;
   };
 
   const isBlocked = (logementKey, date) => {
@@ -87,10 +81,8 @@ const App = () => {
     return reservations.some(r =>
       r?.logementKey === logementKey &&
       r?.source === source &&
-      r?.start && r?.end &&
-      !isFakeBlock(r) &&
-      !isManuallyBlocked(r) &&
-      new Date(date).toDateString() === new Date(r.start).toDateString()
+      new Date(date).toDateString() === new Date(r.start).toDateString() &&
+      !isFakeBlock(r) && !isManuallyBlocked(r)
     );
   };
 
@@ -98,10 +90,8 @@ const App = () => {
     return reservations.some(r =>
       r?.logementKey === logementKey &&
       r?.source === source &&
-      r?.start && r?.end &&
-      !isFakeBlock(r) &&
-      !isManuallyBlocked(r) &&
-      new Date(date).toDateString() === new Date(r.end).toDateString()
+      new Date(date).toDateString() === new Date(r.end).toDateString() &&
+      !isFakeBlock(r) && !isManuallyBlocked(r)
     );
   };
 
@@ -109,7 +99,6 @@ const App = () => {
     const task = reservations.find(r =>
       r?.logementKey === logementKey &&
       r?.source === 'cleaning' &&
-      r?.start &&
       new Date(date).toDateString() === new Date(r.start).toDateString()
     );
     if (!task) return null;
@@ -158,12 +147,11 @@ const App = () => {
             const isAirbnb = isReserved(logement.logementKey, day.full, 'airbnb');
             const isBooking = isReserved(logement.logementKey, day.full, 'booking');
             const isCurrentlyBlocked = isBlocked(logement.logementKey, day.full);
-            const isManualBlockActive = isCurrentlyBlocked && reservations.some(
-              (r) =>
-                r?.logementKey === logement.logementKey &&
-                new Date(day.full) >= new Date(r.start) &&
-                new Date(day.full) <= new Date(r.end) &&
-                isManuallyBlocked(r)
+            const isManualBlockActive = isCurrentlyBlocked && reservations.some(r =>
+              r?.logementKey === logement.logementKey &&
+              new Date(day.full) >= new Date(r.start) &&
+              new Date(day.full) <= new Date(r.end) &&
+              isManuallyBlocked(r)
             );
 
             const cleaningBadge = getCleaningBadge(logement.logementKey, day.full);
