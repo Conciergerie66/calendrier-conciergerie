@@ -24,12 +24,21 @@ if (fs.existsSync(nomsPath)) {
 const cleanersPath = path.join(__dirname, 'logement-prestataire.json');
 let logementCleaners = {};
 if (fs.existsSync(cleanersPath)) {
-  logementCleaners = JSON.parse(fs.readFileSync(cleanersPath, 'utf-8'));
+  const brut = JSON.parse(fs.readFileSync(cleanersPath, 'utf-8'));
+  // Adapter si le format est { "logement-1": "PORTOS", ... }
+  logementCleaners = {};
+  for (const key in brut) {
+    if (typeof brut[key] === 'string') {
+      logementCleaners[key] = { cleaner: brut[key], dayOffset: 0 };
+    } else {
+      logementCleaners[key] = brut[key];
+    }
+  }
 }
 
 // 🔸 Configuration des sources iCal via .env
 let sources = [
-  ...Array.from({ length: 26 }, (_, i) => {
+  ...Array.from({ length: 50 }, (_, i) => {
     const index = i + 1;
     return [
       {
@@ -116,7 +125,6 @@ const fetchReservations = async () => {
   console.log(`✅ Réservations + Ménages mis à jour (${reservations.length} entrées) à ${new Date().toISOString()}`);
 };
 
-// 🔸 API ajout dynamique d’iCal
 app.post('/ajouter-source', (req, res) => {
   const { url, logementKey = `logement-${sources.length + 1}` } = req.body;
 
@@ -135,12 +143,10 @@ app.post('/ajouter-source', (req, res) => {
   res.json({ success: true });
 });
 
-// 🔸 API récupération des réservations
 app.get('/reservations', (req, res) => {
   res.json(reservations);
 });
 
-// 🔸 API pour modifier un nom de logement
 app.post('/logements', (req, res) => {
   const { logementKey, newName } = req.body;
   if (!logementKey || !newName) {
@@ -156,7 +162,7 @@ app.post('/logements', (req, res) => {
 });
 
 fetchReservations();
-setInterval(fetchReservations, 1000 * 60 * 60); // Mise à jour toutes les heures
+setInterval(fetchReservations, 1000 * 60 * 60);
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend en ligne sur http://localhost:${PORT}`);
