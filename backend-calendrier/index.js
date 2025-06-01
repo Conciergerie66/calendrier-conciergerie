@@ -21,11 +21,10 @@ if (fs.existsSync(nomsPath)) {
 }
 
 // 🔸 Chargement des prestataires de ménage
-const cleanersPath = path.join(__dirname, 'logement-prestataire.json');
+const cleanersPath = path.join(__dirname, 'logement-prestataires.json');
 let logementCleaners = {};
 if (fs.existsSync(cleanersPath)) {
   const brut = JSON.parse(fs.readFileSync(cleanersPath, 'utf-8'));
-  // Adapter si le format est { "logement-1": "PORTOS", ... }
   logementCleaners = {};
   for (const key in brut) {
     if (typeof brut[key] === 'string') {
@@ -117,6 +116,8 @@ const fetchReservations = async () => {
           start: cleaningDate.toISOString(),
           assignedCleaner: cleanerConfig.cleaner
         });
+
+        console.log(`🧼 Ménage ajouté pour ${booking.logementKey} ➜ ${cleanerConfig.cleaner} à ${cleaningDate.toISOString()}`);
       }
     }
   });
