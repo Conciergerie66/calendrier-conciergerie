@@ -1,254 +1,163 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import axios from 'axios';
-import './App.css'; // Assurez-vous que ce fichier CSS est celui que votre frontend utilise réellement
+const express = require('express');
+const ical = require('node-ical');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
 
-// Définition des émojis pour chaque société de nettoyage
-// Les clés ici doivent correspondre au premier mot en minuscules des noms de société
-// que votre backend envoie dans le champ 'assignedCleaner' des tâches de ménage.
-const CLEANING_COMPANY_EMOJIS = {
-  "portos": "🐟",
-  "proconcept": "🥊",
-  "cleansud": "☀️",
-  "naira": "💇"
-  // Exemple: si votre backend envoie "Société Alpha", la clé ici serait "société"
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const PORT = process.env.PORT || 3001;
+
+// 🔸 Chargement des noms personnalisés
+const nomsPath = path.join(__dirname, 'logement-noms.json');
+let nomsPerso = {};
+if (fs.existsSync(nomsPath)) {
+  nomsPerso = JSON.parse(fs.readFileSync(nomsPath, 'utf-8'));
+}
+
+// 🔸 Chargement des prestataires de ménage
+const cleanersPath = path.join(__dirname, 'logement-prestataire.json');
+let logementCleaners = {};
+if (fs.existsSync(cleanersPath)) {
+  logementCleaners = JSON.parse(fs.readFileSync(cleanersPath, 'utf-8'));
+}
+
+// 🔸 Configuration des sources iCal via .env
+let sources = [
+  ...Array.from({ length: 26 }, (_, i) => {
+    const index = i + 1;
+    return [
+      {
+        logementKey: `logement-${index}`,
+        source: 'airbnb',
+        url: process.env[`AIRBNB_LOGEMENT_${index}`]
+      },
+      process.env[`BOOKING_LOGEMENT_${index}`]
+        ? {
+            logementKey: `logement-${index}`,
+            source: 'booking',
+            url: process.env[`BOOKING_LOGEMENT_${index}`]
+          }
+        : null
+    ].filter(Boolean);
+  }).flat()
+];
+
+const extractIdFromUrl = (url) => {
+  const match = url.match(/ical\/([^/]+)\.ics/);
+  return match ? match[1] : null;
 };
 
-// Fonctions utilitaires pures (stables, ne changent pas entre les rendus)
-const isFakeBlockPure = (r) => {
-  if (!r || !r.start || !r.end) return false;
-  // Votre backend pousse tous les VEVENT comme type 'booking',
-  // donc cette logique doit s'appliquer aux objets de type 'booking'
-  if (r.type !== 'booking') return false; // Appliquer uniquement aux réservations réelles
-  const duration = new Date(r.end) - new Date(r.start);
-  const guestSummary = r.guest ? r.guest.toLowerCase().trim() : ''; // 'guest' contient le summary de l'iCal
-  return duration < 1000 * 60 * 60 * 20 && (!guestSummary || ['not available', 'non disponible'].includes(guestSummary));
-};
+let reservations = [];
 
-const isManuallyBlockedPure = (reservation) => {
-  // Votre backend pousse tous les VEVENT comme type 'booking'.
-  // 'guest' contient le summary.
-  if (reservation.type !== 'booking') return false;
-  return reservation.source === 'airbnb' && reservation.guest?.toLowerCase().includes('not available') && !reservation.description; // Ajusté pour utiliser 'guest' qui vient de ev.summary
-};
+const fetchReservations = async () => {
+  const results = [];
 
-const App = () => {
-  const [allCalendarEvents, setAllCalendarEvents] = useState([]); // Contient toutes les données: réservations + ménages du backend
-  const [offset, setOffset] = useState(0);
-  const [error, setError] = useState(null);
+  for (let source of sources) {
+    try {
+      const data = await ical.async.fromURL(source.url);
 
-  const API_URL = process.env.VITE_API_URL || "https://calendrier-conciergerie.onrender.com";
+      const calendarId = extractIdFromUrl(source.url);
+      const calendarName =
+        nomsPerso[source.logementKey] ||
+        (calendarId
+          ? `Logement ${source.source.toUpperCase()} - ${calendarId}`
+          : `Logement ${source.source.toUpperCase()}`);
 
-  useEffect(() => {
-    axios.get(`${API_URL}/reservations`)
-      .then(res => {
-        setAllCalendarEvents(res.data); // Les données du backend contiennent déjà tout
-        setError(null);
-      })
-      .catch(err => {
-        console.error("Erreur lors de la récupération des réservations:", err);
-        setError("Impossible de charger les données des réservations. Veuillez réessayer plus tard.");
-        setAllCalendarEvents([]);
-      });
-  }, [API_URL]);
+      for (let k in data) {
+        const ev = data[k];
+        if (ev.type === 'VEVENT') {
+          results.push({
+            logementKey: source.logementKey,
+            name: calendarName,
+            source: source.source,
+            start: ev.start,
+            end: ev.end,
+            guest: ev.summary || '',
+            type: 'booking'
+          });
+        }
+      }
 
-  const logements = useMemo(() => {
-    const uniqueLogementsMap = new Map();
-    allCalendarEvents.forEach(item => {
-      if (item.logementKey && !uniqueLogementsMap.has(item.logementKey)) {
-        // Le champ 'name' fourni par le backend est le nom du calendrier/logement personnalisé
-        uniqueLogementsMap.set(item.logementKey, { 
-            logementKey: item.logementKey, 
-            name: item.name || `Logement ${item.logementKey}` // item.name vient du backend
+      console.log(`📌 ${calendarName} chargé`);
+    } catch (err) {
+      console.error(`❌ Erreur iCal pour ${source.url}:`, err.message);
+    }
+  }
+
+  // 🔧 Génération automatique des tâches de ménage à chaque départ
+  const cleaningTasks = [];
+
+  results.forEach(booking => {
+    if (booking.type === 'booking') {
+      const cleanerConfig = logementCleaners[booking.logementKey];
+      if (cleanerConfig && booking.end) {
+        const dayOffset = cleanerConfig.dayOffset || 0;
+        const cleaningDate = new Date(booking.end);
+        cleaningDate.setDate(cleaningDate.getDate() + dayOffset);
+
+        cleaningTasks.push({
+          logementKey: booking.logementKey,
+          name: booking.name,
+          type: 'cleaning',
+          start: cleaningDate.toISOString(),
+          assignedCleaner: cleanerConfig.cleaner
         });
       }
-    });
-    const uniqueList = Array.from(uniqueLogementsMap.values());
-    uniqueList.sort((a, b) => a.name.localeCompare(b.name));
-    return uniqueList;
-  }, [allCalendarEvents]);
-
-  const days = useMemo(() => {
-    const dayArray = [];
-    const baseDate = new Date();
-    baseDate.setDate(baseDate.getDate() + offset);
-    for (let i = 0; i < 30; i++) {
-      const date = new Date(baseDate);
-      date.setDate(baseDate.getDate() + i);
-      dayArray.push({
-        full: date.toLocaleDateString('fr-CA'),
-        short: date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''),
-        isSunday: date.getDay() === 0,
-        dateObject: date
-      });
     }
-    return dayArray;
-  }, [offset]);
+  });
 
-  const getReservationDetailsForCell = useCallback((logementKey, targetDateObj) => {
-    const activeReservation = allCalendarEvents.find(r =>
-      r?.logementKey === logementKey &&
-      r?.start && r?.end &&
-      r.type === 'booking' && // Filtrer par type 'booking' (défini par backend)
-      // r.source === 'airbnb' || r.source === 'booking' (source est aussi disponible)
-      !isFakeBlockPure(r) &&
-      !isManuallyBlockedPure(r) &&
-      targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
-      targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999))
-    );
-
-    if (activeReservation) {
-      const startDate = new Date(new Date(activeReservation.start).setHours(0,0,0,0));
-      const endDate = new Date(new Date(activeReservation.end).setHours(0,0,0,0));
-      const isEntryDay = targetDateObj.getTime() === startDate.getTime();
-      const isExitDay = targetDateObj.getTime() === endDate.getTime();
-      // 'guest' pour les réservations de type 'booking' contient le nom du client (ev.summary)
-      return { ...activeReservation, isEntryDay, isExitDay, guestName: activeReservation.guest || '' };
-    }
-    return null;
-  }, [allCalendarEvents]);
-  
-  const getBlockingReservationForCell = useCallback((logementKey, targetDateObj) => {
-    // Les blocages sont identifiés par isFakeBlockPure ou isManuallyBlockedPure
-    // sur des événements de type 'booking'
-    return allCalendarEvents.find(r =>
-      r?.logementKey === logementKey &&
-      r?.start && r?.end &&
-      r.type === 'booking' && // Les blocages sont aussi de type 'booking' mais identifiés par leur contenu
-      targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
-      targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999)) &&
-      (isManuallyBlockedPure(r) || isFakeBlockPure(r))
-    );
-  }, [allCalendarEvents]);
-
-  const getCleaningInfoForCell = useCallback((logementKey, targetDateObj) => {
-    const task = allCalendarEvents.find(r =>
-      r?.logementKey === logementKey &&
-      r.type === 'cleaning' && // Filtrer par type 'cleaning' (défini par backend)
-      r?.start &&
-      new Date(new Date(r.start).setHours(0,0,0,0)).getTime() === targetDateObj.getTime()
-    );
-
-    if (!task) return null;
-    
-    // Pour les tâches de type 'cleaning', le backend met le nom du prestataire dans 'assignedCleaner'
-    const companyNameFromBackend = task.assignedCleaner;
-    const companyKey = companyNameFromBackend?.toLowerCase().trim().split(' ')[0];
-    
-    return {
-        emoji: CLEANING_COMPANY_EMOJIS[companyKey] || "🧼", // Émoji par défaut
-        companyName: companyNameFromBackend 
-    };
-  }, [allCalendarEvents]);
-
-
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-  if (logements.length === 0 && allCalendarEvents.length > 0) {
-      return <div className="loading-message">Traitement des données du calendrier...</div>
-  }
-  if (logements.length === 0 && allCalendarEvents.length === 0 && !error) {
-    return <div className="loading-message">Chargement du calendrier...</div>;
-  }
-
-  return (
-    <div className="calendar-container">
-      <div className="calendar-navigation">
-        <button onClick={() => setOffset(offset - 30)}>← Mois précédent</button>
-        <span className="calendar-title">Calendrier des réservations</span>
-        <button onClick={() => setOffset(offset + 30)}>Mois suivant →</button>
-      </div>
-
-      <div className="calendar-scroll-container">
-        <div className="header-row">
-          <div className="header-cell logement-title-header"></div>
-          {days.map(day => (
-            <div key={day.full} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
-              {day.short}
-            </div>
-          ))}
-        </div>
-
-        <div className="header-row">
-          <div className="header-cell logement-title-header">Logement</div>
-          {days.map(day => (
-            <div key={`${day.full}-date`} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
-              {day.full.slice(5)}
-            </div>
-          ))}
-        </div>
-
-        {logements.map(logement => (
-          <div className="row" key={logement.logementKey}>
-            {/* Le nom du logement vient directement du backend via item.name */}
-            <div className="cell logement-name">{logement.name}</div>
-            {days.map(day => {
-              const targetDateObject = day.dateObject;
-              let cellText = null;
-              let titleParts = [];
-              const classList = ['cell'];
-              if (day.isSunday) classList.push('sunday');
-
-              const blockingReservation = getBlockingReservationForCell(logement.logementKey, targetDateObject);
-              const activeReservationDetails = !blockingReservation ? getReservationDetailsForCell(logement.logementKey, targetDateObject) : null;
-              
-              if (blockingReservation) {
-                if (isManuallyBlockedPure(blockingReservation)) {
-                  classList.push('blocked-manual');
-                  // Le champ 'guest' d'un blocage contient souvent 'Not available'
-                  titleParts.push(blockingReservation.guest || "Bloqué manuellement");
-                } else if (isFakeBlockPure(blockingReservation)) {
-                  classList.push('blocked-fake');
-                  titleParts.push(blockingReservation.guest || "Blocage système");
-                }
-              } else if (activeReservationDetails) {
-                // activeReservationDetails.guestName est le nom du client venant du backend (champ 'guest')
-                cellText = activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '' && !activeReservationDetails.guestName.toLowerCase().includes('not available')
-                           ? activeReservationDetails.guestName 
-                           : 'Réservé';
-                if (activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '') {
-                    titleParts.push(`Client: ${activeReservationDetails.guestName}`);
-                } else {
-                    titleParts.push("Réservé");
-                }
-                
-                // activeReservationDetails.source vient du backend ('airbnb' ou 'booking')
-                classList.push(activeReservationDetails.source); 
-
-                if (activeReservationDetails.isEntryDay && activeReservationDetails.isExitDay) {
-                  classList.push('cell-entry-exit');
-                  titleParts.push("Arrivée & Départ");
-                } else if (activeReservationDetails.isEntryDay) {
-                  classList.push('cell-entry');
-                  titleParts.push("Arrivée");
-                } else if (activeReservationDetails.isExitDay) {
-                  classList.push('cell-exit');
-                  titleParts.push("Départ");
-                }
-              }
-
-              const cleaningInfo = getCleaningInfoForCell(logement.logementKey, targetDateObject);
-              if (cleaningInfo) {
-                classList.push('has-cleaning');
-                titleParts.push(`Ménage: ${cleaningInfo.emoji} (${cleaningInfo.companyName || 'N/A'})`);
-              }
-
-              return (
-                <div
-                  className={classList.join(' ')}
-                  key={`${logement.logementKey}-${day.full}`}
-                  title={titleParts.join(' | ') || undefined}
-                >
-                  <span className="cell-text">{cellText}</span>
-                  {cleaningInfo && <span className="cleaning-badge">{cleaningInfo.emoji}</span>}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  reservations = [...results, ...cleaningTasks];
+  console.log(`✅ Réservations + Ménages mis à jour (${reservations.length} entrées) à ${new Date().toISOString()}`);
 };
 
-export default App;
+// 🔸 API ajout dynamique d’iCal
+app.post('/ajouter-source', (req, res) => {
+  const { url, logementKey = `logement-${sources.length + 1}` } = req.body;
+
+  if (!url || !url.startsWith('http')) {
+    return res.status(400).json({ error: 'URL invalide' });
+  }
+
+  sources.push({
+    logementKey,
+    source: 'airbnb',
+    url
+  });
+
+  fetchReservations();
+  console.log(`➕ Lien iCal ajouté pour ${logementKey}`);
+  res.json({ success: true });
+});
+
+// 🔸 API récupération des réservations
+app.get('/reservations', (req, res) => {
+  res.json(reservations);
+});
+
+// 🔸 API pour modifier un nom de logement
+app.post('/logements', (req, res) => {
+  const { logementKey, newName } = req.body;
+  if (!logementKey || !newName) {
+    return res.status(400).json({ error: 'Champs manquants' });
+  }
+
+  nomsPerso[logementKey] = newName;
+  fs.writeFileSync(nomsPath, JSON.stringify(nomsPerso, null, 2));
+  console.log(`✅ Nom mis à jour : ${logementKey} ➜ ${newName}`);
+
+  fetchReservations();
+  res.json({ success: true });
+});
+
+fetchReservations();
+setInterval(fetchReservations, 1000 * 60 * 60); // Mise à jour toutes les heures
+
+app.listen(PORT, () => {
+  console.log(`🚀 Backend en ligne sur http://localhost:${PORT}`);
+});
