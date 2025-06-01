@@ -1,35 +1,38 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import axios from 'axios';
-import './App.css';
+import './App.css'; // Assurez-vous que ce fichier CSS est celui que votre frontend utilise réellement
 
-// Importez votre fichier de mapping JSON des logements aux sociétés de nettoyage
-import cleaningCompanyMapping from './logement-noms.json';
-
-// Définition des émojis pour chaque société de nettoyage
-// Les clés ici doivent correspondre au premier mot en minuscules des noms de société dans votre JSON
+// Définition des émojis pour chaque société de nettoyage.
+// Les clés ici doivent correspondre au premier mot en minuscules des noms de société
+// que votre backend envoie dans le champ 'assignedCleaner' des tâches de ménage.
 const CLEANING_COMPANY_EMOJIS = {
   "portos": "🐟",
   "proconcept": "🥊",
   "cleansud": "☀️",
   "naira": "💇"
-  // Ajoutez d'autres sociétés et leurs émojis ici si nécessaire
+  // Exemple: si votre backend envoie "Société Alpha", la clé ici serait "société"
 };
 
 // Fonctions utilitaires pures (stables, ne changent pas entre les rendus)
+// Elles opèrent sur les données reçues du backend.
 const isFakeBlockPure = (r) => {
   if (!r || !r.start || !r.end) return false;
+  // Le backend envoie les événements iCal (y compris les blocages) avec type: 'booking'
+  // et le 'summary' de l'iCal dans le champ 'guest'.
+  if (r.type !== 'booking') return false;
   const duration = new Date(r.end) - new Date(r.start);
-  const guest = r.guest ? r.guest.toLowerCase().trim() : '';
-  return duration < 1000 * 60 * 60 * 20 && (!guest || ['not available', 'non disponible'].includes(guest));
+  const guestSummary = r.guest ? r.guest.toLowerCase().trim() : '';
+  return duration < 1000 * 60 * 60 * 20 && (!guestSummary || ['not available', 'non disponible'].includes(guestSummary));
 };
 
 const isManuallyBlockedPure = (reservation) => {
-  return reservation?.source === 'airbnb' && reservation?.summary?.toLowerCase().includes('not available') && !reservation?.description;
+  if (reservation.type !== 'booking') return false;
+  // Le backend met le 'summary' de l'iCal dans reservation.guest
+  return reservation.source === 'airbnb' && reservation.guest?.toLowerCase().includes('not available') && !reservation.description;
 };
 
-
 const App = () => {
-  const [rawReservations, setRawReservations] = useState([]);
+  const [allCalendarEvents, setAllCalendarEvents] = useState([]); // Contient TOUTES les données: réservations + ménages directement du backend
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState(null);
 
@@ -38,77 +41,31 @@ const App = () => {
   useEffect(() => {
     axios.get(`${API_URL}/reservations`)
       .then(res => {
-        setRawReservations(res.data);
+        setAllCalendarEvents(res.data); // Les données du backend contiennent déjà tout
         setError(null);
       })
       .catch(err => {
         console.error("Erreur lors de la récupération des réservations:", err);
         setError("Impossible de charger les données des réservations. Veuillez réessayer plus tard.");
-        setRawReservations([]);
+        setAllCalendarEvents([]);
       });
-  }, [API_URL]); // API_URL est une dépendance si elle peut changer
-
-  const allCalendarEvents = useMemo(() => {
-    const generatedCleaningTasks = [];
-    if (!rawReservations || rawReservations.length === 0 || Object.keys(cleaningCompanyMapping).length === 0) {
-      return rawReservations || [];
-    }
-
-    rawReservations.forEach(res => {
-      if ((res.source === 'airbnb' || res.source === 'booking') &&
-          !isFakeBlockPure(res) &&
-          !isManuallyBlockedPure(res)) {
-            
-        const departureDateStr = res.end;
-        const logementKey = res.logementKey;
-        const companyName = cleaningCompanyMapping[logementKey];
-
-        if (departureDateStr && logementKey && companyName) {
-          // Assurer que departureDateStr est bien une date valide pour la création de l'objet Date
-          const departureDate = new Date(departureDateStr);
-          if (!isNaN(departureDate.getTime())) { // Vérifie si la date est valide
-            generatedCleaningTasks.push({
-              logementKey: logementKey,
-              start: departureDate.toISOString(), // Stocker en ISO string pour consistance
-              end: departureDate.toISOString(),
-              source: 'cleaning',
-              guest: companyName, // Nom de la société pour l'emoji et le tooltip
-              summary: `Ménage par ${companyName}`,
-              id: `cleaning-${logementKey}-${departureDate.toISOString().split('T')[0]}` // ID unique
-            });
-          }
-        }
-      }
-    });
-    return [...rawReservations, ...generatedCleaningTasks];
-  }, [rawReservations]);
-
+  }, [API_URL]);
 
   const logements = useMemo(() => {
     const uniqueLogementsMap = new Map();
     allCalendarEvents.forEach(item => {
       if (item.logementKey && !uniqueLogementsMap.has(item.logementKey)) {
-        const originalReservation = rawReservations.find(r => r.logementKey === item.logementKey && r.name && r.source !== 'cleaning');
-        const nameFromReservation = originalReservation?.name?.replace(/\s+/g, ' ').trim();
-        const nameFromItem = item.name?.replace(/\s+/g, ' ').trim();
-        
-        let displayName = nameFromReservation || nameFromItem || `Logement ${item.logementKey}`;
-        // Éviter que le nom du logement soit le nom d'une société de ménage si c'est la seule info
-        if (Object.values(CLEANING_COMPANY_EMOJIS).includes(displayName) || 
-            Object.keys(CLEANING_COMPANY_EMOJIS).map(k => k.toLowerCase()).includes(displayName.toLowerCase())) {
-             displayName = `Logement ${item.logementKey}`;
-        }
-        if (nameFromReservation) displayName = nameFromReservation;
-
-
-        uniqueLogementsMap.set(item.logementKey, { logementKey: item.logementKey, name: displayName });
+        // Le champ 'name' fourni par le backend est le nom du calendrier/logement personnalisé
+        uniqueLogementsMap.set(item.logementKey, { 
+            logementKey: item.logementKey, 
+            name: item.name || `Logement ${item.logementKey}` // item.name vient du backend
+        });
       }
     });
     const uniqueList = Array.from(uniqueLogementsMap.values());
     uniqueList.sort((a, b) => a.name.localeCompare(b.name));
     return uniqueList;
-  }, [allCalendarEvents, rawReservations]);
-
+  }, [allCalendarEvents]);
 
   const days = useMemo(() => {
     const dayArray = [];
@@ -118,10 +75,10 @@ const App = () => {
       const date = new Date(baseDate);
       date.setDate(baseDate.getDate() + i);
       dayArray.push({
-        full: date.toLocaleDateString('fr-CA'), // YYYY-MM-DD
+        full: date.toLocaleDateString('fr-CA'),
         short: date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', ''),
         isSunday: date.getDay() === 0,
-        dateObject: date // Garder l'objet Date pour comparaisons faciles
+        dateObject: date
       });
     }
     return dayArray;
@@ -131,11 +88,11 @@ const App = () => {
     const activeReservation = allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
       r?.start && r?.end &&
-      (r.source === 'airbnb' || r.source === 'booking') &&
+      r.type === 'booking' && // Filtrer par type 'booking' (défini par backend)
       !isFakeBlockPure(r) &&
       !isManuallyBlockedPure(r) &&
       targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
-      targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999)) // Fin de journée incluse
+      targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999))
     );
 
     if (activeReservation) {
@@ -143,6 +100,7 @@ const App = () => {
       const endDate = new Date(new Date(activeReservation.end).setHours(0,0,0,0));
       const isEntryDay = targetDateObj.getTime() === startDate.getTime();
       const isExitDay = targetDateObj.getTime() === endDate.getTime();
+      // 'guest' pour les réservations de type 'booking' contient le nom du client (ev.summary du backend)
       return { ...activeReservation, isEntryDay, isExitDay, guestName: activeReservation.guest || '' };
     }
     return null;
@@ -152,6 +110,7 @@ const App = () => {
     return allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
       r?.start && r?.end &&
+      r.type === 'booking' && // Les blocages sont aussi de type 'booking' mais identifiés par leur contenu
       targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
       targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999)) &&
       (isManuallyBlockedPure(r) || isFakeBlockPure(r))
@@ -161,18 +120,20 @@ const App = () => {
   const getCleaningInfoForCell = useCallback((logementKey, targetDateObj) => {
     const task = allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
-      r?.source === 'cleaning' &&
+      r.type === 'cleaning' && // Filtrer par type 'cleaning' (défini par backend)
       r?.start &&
       new Date(new Date(r.start).setHours(0,0,0,0)).getTime() === targetDateObj.getTime()
     );
 
     if (!task) return null;
     
-    // task.guest est le nom de la société (ex: "Cleansud" depuis le JSON)
-    const companyKey = task.guest?.toLowerCase().trim().split(' ')[0];
+    // Pour les tâches de type 'cleaning', le backend met le nom du prestataire dans 'assignedCleaner'
+    const companyNameFromBackend = task.assignedCleaner; // VIENT DU BACKEND
+    const companyKey = companyNameFromBackend?.toLowerCase().trim().split(' ')[0];
+    
     return {
-        emoji: CLEANING_COMPANY_EMOJIS[companyKey] || "🧼",
-        companyName: task.guest 
+        emoji: CLEANING_COMPANY_EMOJIS[companyKey] || "🧼", // Émoji par défaut
+        companyName: companyNameFromBackend 
     };
   }, [allCalendarEvents]);
 
@@ -180,10 +141,11 @@ const App = () => {
   if (error) {
     return <div className="error-message">{error}</div>;
   }
-  if (logements.length === 0 && rawReservations.length > 0) {
+  if (logements.length === 0 && allCalendarEvents.length > 0) {
       return <div className="loading-message">Traitement des données du calendrier...</div>
   }
-  if (logements.length === 0 && rawReservations.length === 0 && !error) {
+  // Condition de chargement initial avant que les données ne soient récupérées
+  if (allCalendarEvents.length === 0 && !error) {
     return <div className="loading-message">Chargement du calendrier...</div>;
   }
 
@@ -197,8 +159,9 @@ const App = () => {
       </div>
 
       <div className="calendar-scroll-container">
+        {/* ... (rendu des entêtes de jours et dates, inchangé) ... */}
         <div className="header-row">
-          <div className="header-cell logement-title-header"></div> {/* Alignement */}
+          <div className="header-cell logement-title-header"></div>
           {days.map(day => (
             <div key={day.full} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
               {day.short}
@@ -210,7 +173,7 @@ const App = () => {
           <div className="header-cell logement-title-header">Logement</div>
           {days.map(day => (
             <div key={`${day.full}-date`} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
-              {day.full.slice(5)} {/* MM-DD */}
+              {day.full.slice(5)}
             </div>
           ))}
         </div>
@@ -219,7 +182,7 @@ const App = () => {
           <div className="row" key={logement.logementKey}>
             <div className="cell logement-name">{logement.name}</div>
             {days.map(day => {
-              const targetDateObject = day.dateObject; // Utiliser l'objet Date stocké
+              const targetDateObject = day.dateObject;
               let cellText = null;
               let titleParts = [];
               const classList = ['cell'];
@@ -231,20 +194,22 @@ const App = () => {
               if (blockingReservation) {
                 if (isManuallyBlockedPure(blockingReservation)) {
                   classList.push('blocked-manual');
-                  titleParts.push("Bloqué manuellement");
+                  titleParts.push(blockingReservation.guest || "Bloqué manuellement");
                 } else if (isFakeBlockPure(blockingReservation)) {
                   classList.push('blocked-fake');
-                  titleParts.push("Blocage système");
+                  titleParts.push(blockingReservation.guest || "Blocage système");
                 }
               } else if (activeReservationDetails) {
-                cellText = activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '' ? activeReservationDetails.guestName : 'Réservé';
+                cellText = activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '' && !activeReservationDetails.guestName.toLowerCase().includes('not available')
+                           ? activeReservationDetails.guestName 
+                           : 'Réservé';
                 if (activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '') {
                     titleParts.push(`Client: ${activeReservationDetails.guestName}`);
                 } else {
                     titleParts.push("Réservé");
                 }
                 
-                classList.push(activeReservationDetails.source); // 'airbnb' ou 'booking'
+                classList.push(activeReservationDetails.source); 
 
                 if (activeReservationDetails.isEntryDay && activeReservationDetails.isExitDay) {
                   classList.push('cell-entry-exit');
@@ -261,7 +226,7 @@ const App = () => {
               const cleaningInfo = getCleaningInfoForCell(logement.logementKey, targetDateObject);
               if (cleaningInfo) {
                 classList.push('has-cleaning');
-                titleParts.push(`Ménage: ${cleaningInfo.emoji} (${cleaningInfo.companyName})`);
+                titleParts.push(`Ménage: ${cleaningInfo.emoji} (${cleaningInfo.companyName || 'N/A'})`);
               }
 
               return (
