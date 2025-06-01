@@ -122,7 +122,7 @@ body {
 
 /* Dimanche */
 .sunday {
-  background-color: #e6ffed; /* Vert pastel */
+  background-color: #035219; /* Vert pastel */
 }
 
 /* Réservations */
@@ -164,7 +164,7 @@ body {
 
 /* Blocages */
 .blocked-manual {
-  background-color: #343a40 !important;
+  background-color: #3f4347 !important;
   color: #ced4da; /* Texte  visible  (ex: "Bloqué") */
   /* Pour un motif hachuré : */
   /* background-image: repeating-linear-gradient(135deg, #343a40, #343a40 5px, #495057 5px, #495057 10px); */
@@ -172,7 +172,7 @@ body {
 
 .blocked-fake {
   background-color: #e9ecef !important; /* Gris clair */
-  color: #50565c;
+  color: #e3e7eb;
   font-style: italic;
 }
 
