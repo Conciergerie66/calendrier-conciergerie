@@ -1,166 +1,216 @@
-/* Réinitialisation des boîtes */
+/* Réinitialisation et styles de base */
 * {
   box-sizing: border-box;
 }
 
 body {
-  font-family: Arial, sans-serif;
-  margin: 0; /* Enlever la marge par défaut pour le conteneur principal */
-  background-color: #f4f7f6; /* Fond légèrement différent pour le corps */
-  padding: 20px; /* Ajouter un padding global */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  margin: 0;
+  background-color: #f4f7f6;
+  padding: 15px;
+  font-size: 14px;
+  color: #333;
 }
 
 .calendar-container {
   width: 100%;
-  max-width: 100%; /* S'assurer qu'il ne dépasse pas la largeur de la fenêtre */
+  max-width: 100%;
+}
+
+.calendar-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 0 10px;
+}
+
+.calendar-navigation button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.calendar-navigation button:hover {
+  background-color: #0056b3;
+}
+
+.calendar-title {
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #343a40;
 }
 
 .calendar-scroll-container {
-  overflow-x: auto; /* Défilement horizontal uniquement ici */
+  overflow-x: auto;
   width: 100%;
-  border: 1px solid #ccc; /* Optionnel: une bordure autour du calendrier */
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optionnel: une légère ombre */
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .header-row,
 .row {
   display: flex;
-  flex-wrap: nowrap; /* Empêcher le retour à la ligne des cellules */
+  flex-wrap: nowrap; /* Important pour le défilement horizontal */
 }
 
 .header-cell,
 .cell {
-  border: 1px solid #ddd;
-  min-width: 70px; /* Augmenter un peu la largeur pour les noms */
-  width: 70px;
-  height: 40px; /* Augmenter un peu la hauteur */
-  font-size: 11px; /* Ajuster pour que le texte tienne mieux */
+  border-right: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
+  min-width: 75px; /* Légèrement plus large pour noms/infos */
+  width: 75px;
+  height: 42px; /* Légèrement plus haut */
+  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden; /* Important pour le text-overflow */
+  overflow: hidden;
   text-overflow: ellipsis;
-  position: relative; /* Pour le positionnement absolu du badge */
-  padding: 2px; /* Un peu de padding interne */
+  position: relative; /* Pour le badge */
+  padding: 2px 3px; /* Padding interne */
+}
+.header-cell:first-child, .cell:first-child { /* Bordure gauche pour la première cellule */
+    border-left: 1px solid #e9ecef;
+}
+.header-row:first-child .header-cell { /* Bordure haute pour la première ligne d'entête */
+    border-top: 1px solid #e9ecef;
 }
 
-.cell-text { /* Span pour contrôler le texte spécifiquement */
-  display: inline-block;
+
+.cell-text {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-block;
 }
 
-
-/* Logement : colonne gauche */
-.logement-title-header { /* Style pour la cellule d'entête de la colonne logement */
-  min-width: 200px;
-  width: 200px;
+/* Colonne des logements (fixe à gauche) */
+.logement-title-header,
+.logement-name {
+  min-width: 180px; /* Ajuster selon la longueur des noms de logements */
+  width: 180px;
   font-weight: bold;
-  background-color: #e9ecef; /* Couleur de fond d'entête */
-  position: sticky; /* Rendre la colonne des logements fixe */
+  padding-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Texte à gauche */
+  position: sticky;
   left: 0;
-  z-index: 3; /* Au-dessus des autres cellules mais en dessous du badge si nécessaire */
+  z-index: 2; /* Au-dessus des cellules qui défilent */
   border-right: 2px solid #adb5bd; /* Bordure plus marquée */
 }
 
-.logement-name { /* Cellule du nom du logement */
-  min-width: 200px;
-  width: 200px;
-  background-color: #f8f9fa;
-  font-weight: bold;
-  padding-left: 8px;
+.logement-title-header {
+  background-color: #f8f9fa; /* Fond d'entête */
+  z-index: 3; /* Au-dessus des noms de logement si superposition */
+  border-top: 1px solid #e9ecef; /* Assurer la bordure du haut */
+}
+
+.logement-name {
+  background-color: #ffffff; /* Fond pour les noms de logements */
   font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start; /* Aligner le texte à gauche */
-  position: sticky; /* Rendre la colonne des logements fixe */
-  left: 0;
-  z-index: 1; /* S'assurer qu'il est au-dessus des barres de défilement mais en dessous de l'entête fixe */
-  border-right: 2px solid #adb5bd;
 }
 
 /* Dimanche */
 .sunday {
-  background-color: #e6ffed; /* Vert plus doux */
+  background-color: #e6ffed; /* Vert pastel */
 }
 
 /* Réservations */
 .airbnb {
-  background-color: #ff5a5f; /* Couleur Airbnb officielle */
-  color: white; /* Texte visible */
+  background-color: #ff5a5f;
+  color: white;
 }
 
 .booking {
-  background-color: #007fad; /* Couleur Booking.com (approximative) */
-  color: white; /* Texte visible */
+  background-color: #007fad;
+  color: white;
 }
 
-/* Entrées/sorties */
-.entry-airbnb {
-  background: linear-gradient(to right, #ff5a5f 50%, transparent 50%);
-  /* Si le texte doit être sur la partie colorée, ajustez le padding ou la taille de la cellule */
+/* Styles pour Arrivée / Départ (bordures) */
+.cell.cell-entry {
+  /* La couleur de la bordure est définie par la source ci-dessous */
 }
-.exit-airbnb {
-  background: linear-gradient(to left, #ff5a5f 50%, transparent 50%);
+.cell.cell-exit {
+  /* La couleur de la bordure est définie par la source ci-dessous */
 }
-.entry-booking {
-  background: linear-gradient(to right, #007fad 50%, transparent 50%);
-}
-.exit-booking {
-  background: linear-gradient(to left, #007fad 50%, transparent 50%);
+.cell.cell-entry-exit { /* Réservation d'un seul jour */
+  /* Les deux bordures seront appliquées par les règles spécifiques à la source */
 }
 
-/* Pour les réservations d'un jour (entrée et sortie le même jour) */
-.entry-exit-airbnb {
-  background-color: #ff5a5f; /* Pleine couleur */
-  /* background-image: repeating-linear-gradient(
-    45deg,
-    #ff5a5f,
-    #ff5a5f 10px,
-    #ff8a8c 10px,
-    #ff8a8c 20px 
-  ); Alternative: hachures */
+.cell-entry.airbnb, .cell-entry-exit.airbnb {
+  border-left: 4px solid #fd8689 !important; /* Rouge Airbnb plus clair, !important pour priorité */
 }
-.entry-exit-booking {
-  background-color: #007fad; /* Pleine couleur */
+.cell-exit.airbnb, .cell-entry-exit.airbnb {
+  border-right: 4px solid #fd8689 !important;
+}
+
+.cell-entry.booking, .cell-entry-exit.booking {
+  border-left: 4px solid #49a3d9 !important; /* Bleu Booking plus clair */
+}
+.cell-exit.booking, .cell-entry-exit.booking {
+  border-right: 4px solid #49a3d9 !important;
 }
 
 
 /* Blocages */
 .blocked-manual {
-  background-color: #343a40 !important; /* Noir plus doux */
-  color: white; /* Permettre un texte comme "Bloqué" si besoin */
-  /* Si vous voulez un pattern pour indiquer que c'est bloqué : */
+  background-color: #343a40 !important;
+  color: #ced4da; /* Texte légèrement visible si besoin (ex: "Bloqué") */
+  /* Pour un motif hachuré : */
   /* background-image: repeating-linear-gradient(135deg, #343a40, #343a40 5px, #495057 5px, #495057 10px); */
 }
 
-.blocked-fake { /* Ancien .blocked */
-  background-color: #e9ecef !important; /* Gris clair pour les blocages système/courts */
-  color: #6c757d; /* Texte grisé */
-  /* background-image: repeating-linear-gradient(45deg, #transparent, transparent 1px, #f0f0f0 1px, #f0f0f0 3px); */
+.blocked-fake {
+  background-color: #e9ecef !important; /* Gris clair */
+  color: #6c757d;
+  font-style: italic;
 }
 
-/* ✅ Badge de ménage */
+/* Badge de ménage */
 .cleaning-badge {
-  font-size: 14px; /* Un peu plus grand pour être plus visible */
+  font-size: 15px;
   position: absolute;
   bottom: 2px;
   right: 2px;
   background: white;
-  border-radius: 50%; /* Rond pour un look de badge */
-  padding: 2px 4px; /* Ajuster le padding */
-  color: black;
-  font-weight: normal; /* Normal pour les émojis */
-  z-index: 4; /* Au-dessus de tout dans la cellule */
+  border-radius: 50%; /* Rond */
+  width: 22px;
+  height: 22px;
+  color: #212529; /* Couleur de l'émoji/texte */
+  z-index: 4; /* Au-dessus du contenu de la cellule */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  line-height: 1; /* Pour bien centrer l'émoji */
-  min-width: 18px; /* Assurer une taille minimale */
-  min-height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid #adb5bd; /* Bordure du badge */
+  line-height: 1; /* Pour centrage vertical émoji */
+}
+
+/* Cellule avec ménage (style optionnel) */
+.cell.has-cleaning {
+  /* background-color: #f0f8ff; /* Un fond très léger pour indiquer un ménage, peut être chargé */
+}
+
+/* Messages d'erreur/chargement */
+.error-message {
+  color: red;
+  padding: 20px;
+  text-align: center;
+  font-weight: bold;
+}
+.loading-message {
+  padding: 20px;
+  text-align: center;
+  color: #007bff;
+  font-size: 1.1em;
 }
