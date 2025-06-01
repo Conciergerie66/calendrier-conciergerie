@@ -2,18 +2,13 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import './App.css'; // Assurez-vous que ce fichier CSS est celui que votre frontend utilise réellement
 
-// Définition des émojis pour chaque société de nettoyage.
-// Les clés ici doivent correspondre au premier mot en minuscules des noms de société
-// que votre backend envoie dans le champ 'assignedCleaner' des tâches de ménage.
 const CLEANING_COMPANY_EMOJIS = {
   "portos": "🐟",
   "proconcept": "🥊",
   "cleansud": "☀️",
   "naira": "💇"
-  // Exemple: si votre backend envoie "Société Alpha Nettoyage", la clé ici serait "société"
 };
 
-// Fonctions utilitaires pures pour identifier les types de réservations/blocages
 const isFakeBlockPure = (r) => {
   if (!r || !r.start || !r.end || r.type !== 'booking') return false;
   const duration = new Date(r.end) - new Date(r.start);
@@ -36,8 +31,8 @@ const App = () => {
   useEffect(() => {
     axios.get(`${API_URL}/reservations`)
       .then(res => {
-        // console.log("Données brutes reçues du backend:", JSON.stringify(res.data, null, 2)); // Décommentez pour déboguer les données reçues
-        setAllCalendarEvents(res.data); // Le backend envoie déjà tout (résas + ménages)
+        console.log("Données brutes reçues du backend:", JSON.stringify(res.data, null, 2)); // ESSENTIEL POUR LE DÉBOGAGE
+        setAllCalendarEvents(res.data);
         setError(null);
       })
       .catch(err => {
@@ -53,7 +48,7 @@ const App = () => {
       if (item.logementKey && !uniqueLogementsMap.has(item.logementKey)) {
         uniqueLogementsMap.set(item.logementKey, { 
             logementKey: item.logementKey, 
-            name: item.name || `Logement ${item.logementKey}` // item.name est fourni par le backend
+            name: item.name || `Logement ${item.logementKey}`
         });
       }
     });
@@ -83,9 +78,9 @@ const App = () => {
     const activeReservation = allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
       r?.start && r?.end &&
-      r.type === 'booking' && // On cherche une réservation client
+      r.type === 'booking' &&
       !isFakeBlockPure(r) &&
-      !isManuallyBlockedPure(r) &&
+      !isManuallyBlockedPure(r) && // On ne veut pas qu'un blocage manuel Airbnb soit traité ici s'il doit être rouge
       targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
       targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999))
     );
@@ -104,7 +99,7 @@ const App = () => {
     return allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
       r?.start && r?.end &&
-      r.type === 'booking' && // Les blocages sont des événements de type 'booking' avec un contenu spécifique
+      r.type === 'booking' && 
       targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
       targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999)) &&
       (isManuallyBlockedPure(r) || isFakeBlockPure(r))
@@ -114,14 +109,14 @@ const App = () => {
   const getCleaningInfoForCell = useCallback((logementKey, targetDateObj) => {
     const task = allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
-      r.type === 'cleaning' && // On cherche une tâche de ménage
+      r.type === 'cleaning' &&
       r?.start &&
       new Date(new Date(r.start).setHours(0,0,0,0)).getTime() === targetDateObj.getTime()
     );
 
     if (!task) return null;
     
-    const companyNameFromBackend = task.assignedCleaner; // Champ fourni par le backend
+    const companyNameFromBackend = task.assignedCleaner;
     const companyKey = companyNameFromBackend?.toLowerCase().trim().split(' ')[0];
     
     return {
@@ -133,7 +128,7 @@ const App = () => {
   if (error) {
     return <div className="error-message">{error}</div>;
   }
-  if (logements.length === 0 && allCalendarEvents.length > 0 && !error) { // Ajout de !error ici
+  if (logements.length === 0 && allCalendarEvents.length > 0 && !error) {
       return <div className="loading-message">Traitement des données du calendrier...</div>
   }
   if (allCalendarEvents.length === 0 && !error) {
@@ -149,23 +144,17 @@ const App = () => {
       </div>
 
       <div className="calendar-scroll-container">
+        {/* Entêtes */}
         <div className="header-row">
           <div className="header-cell logement-title-header"></div>
-          {days.map(day => (
-            <div key={day.full} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
-              {day.short}
-            </div>
-          ))}
+          {days.map(day => ( <div key={day.full} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>{day.short}</div> ))}
         </div>
         <div className="header-row">
           <div className="header-cell logement-title-header">Logement</div>
-          {days.map(day => (
-            <div key={`${day.full}-date`} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>
-              {day.full.slice(5)}
-            </div>
-          ))}
+          {days.map(day => ( <div key={`${day.full}-date`} className={`header-cell ${day.isSunday ? 'sunday' : ''}`}>{day.full.slice(5)}</div> ))}
         </div>
 
+        {/* Lignes de logements */}
         {logements.map(logement => (
           <div className="row" key={logement.logementKey}>
             <div className="cell logement-name">{logement.name}</div>
@@ -176,18 +165,34 @@ const App = () => {
               const classList = ['cell'];
               if (day.isSunday) classList.push('sunday');
 
+              let entryArrow = null;
+              let exitArrow = null;
+
               const blockingReservation = getBlockingReservationForCell(logement.logementKey, targetDateObject);
-              const activeReservationDetails = !blockingReservation ? getReservationDetailsForCell(logement.logementKey, targetDateObject) : null;
-              
+              // On ne prend une activeReservationDetails que si ce n'est PAS un blocage manuel Airbnb qui doit être rouge
+              const potentialActiveReservation = !blockingReservation ? getReservationDetailsForCell(logement.logementKey, targetDateObject) : null;
+              let activeReservationDetails = potentialActiveReservation;
+
+
               if (blockingReservation) {
-                if (isManuallyBlockedPure(blockingReservation)) {
+                // Spécifiquement pour "Airbnb (Not available)" à afficher en rouge
+                if (isManuallyBlockedPure(blockingReservation) && blockingReservation.source === 'airbnb') {
+                  classList.push('airbnb'); // Style rouge Airbnb
+                  cellText = blockingReservation.guest || "Airbnb Non Disponible";
+                  titleParts.push(cellText);
+                  activeReservationDetails = null; // S'assurer qu'on ne le traite pas comme une résa active en plus
+                } else if (isManuallyBlockedPure(blockingReservation)) {
                   classList.push('blocked-manual');
                   titleParts.push(blockingReservation.guest || "Bloqué manuellement");
+                  cellText = blockingReservation.guest; // Afficher le texte du blocage
                 } else if (isFakeBlockPure(blockingReservation)) {
                   classList.push('blocked-fake');
                   titleParts.push(blockingReservation.guest || "Blocage système");
+                  cellText = blockingReservation.guest; // Afficher le texte du blocage
                 }
-              } else if (activeReservationDetails) {
+              }
+              
+              if (activeReservationDetails) { // Si ce n'est pas un blocage traité au-dessus
                 cellText = activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '' && !activeReservationDetails.guestName.toLowerCase().includes('not available')
                            ? activeReservationDetails.guestName 
                            : 'Réservé';
@@ -199,20 +204,20 @@ const App = () => {
                 
                 classList.push(activeReservationDetails.source); 
 
-                if (activeReservationDetails.isEntryDay && activeReservationDetails.isExitDay) {
-                  classList.push('cell-entry-exit');
-                  titleParts.push("Arrivée & Départ");
-                } else if (activeReservationDetails.isEntryDay) {
-                  classList.push('cell-entry');
+                if (activeReservationDetails.isEntryDay) {
+                  entryArrow = <span className="entry-arrow">&rarr;</span>; // Flèche vers la droite pour l'arrivée
                   titleParts.push("Arrivée");
-                } else if (activeReservationDetails.isExitDay) {
-                  classList.push('cell-exit');
+                }
+                if (activeReservationDetails.isExitDay) { // Peut être le même jour que l'arrivée
+                  exitArrow = <span className="exit-arrow">&larr;</span>; // Flèche vers la gauche pour le départ
                   titleParts.push("Départ");
                 }
               }
 
               const cleaningInfo = getCleaningInfoForCell(logement.logementKey, targetDateObject);
-              if (cleaningInfo) {
+              // Afficher le ménage sur le jour de départ (qui est le jour 'start' de la tâche de ménage)
+              // S'il y a une réservation qui se termine ce jour-là, ou si c'est un jour de ménage seul.
+              if (cleaningInfo && (activeReservationDetails?.isExitDay || !activeReservationDetails && !blockingReservation) ) {
                 classList.push('has-cleaning');
                 titleParts.push(`Ménage: ${cleaningInfo.emoji} (${cleaningInfo.companyName || 'N/A'})`);
               }
@@ -223,7 +228,10 @@ const App = () => {
                   key={`${logement.logementKey}-${day.full}`}
                   title={titleParts.join(' | ') || undefined}
                 >
+                  {entryArrow && !exitArrow && <span className="cell-icon-left">{entryArrow}</span>}
                   <span className="cell-text">{cellText}</span>
+                  {exitArrow && <span className="cell-icon-right">{exitArrow}</span>}
+                  {/* Afficher le badge de ménage si cleaningInfo et pas de texte principal (ou à côté) */}
                   {cleaningInfo && <span className="cleaning-badge">{cleaningInfo.emoji}</span>}
                 </div>
               );

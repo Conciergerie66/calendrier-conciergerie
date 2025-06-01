@@ -56,7 +56,7 @@ body {
 .header-row,
 .row {
   display: flex;
-  flex-wrap: nowrap; /* Important pour le défilement horizontal */
+  flex-wrap: nowrap;
 }
 
 .header-cell,
@@ -69,28 +69,40 @@ body {
   font-size: 11px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center; /* Centre le contenu principal (texte + icônes ensemble) */
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
-  position: relative; /* Pour le badge */
-  padding: 2px 3px; /* Padding interne */
+  /* text-overflow: ellipsis; Appliqué à .cell-text */
+  position: relative; 
+  padding: 2px 3px;
 }
-.header-cell:first-child, .cell:first-child { /* Bordure gauche pour la première cellule */
+.header-cell:first-child, .cell:first-child {
     border-left: 1px solid #e9ecef;
 }
-.header-row:first-child .header-cell { /* Bordure haute pour la première ligne d'entête */
+.header-row:first-child .header-cell {
     border-top: 1px solid #e9ecef;
 }
 
 .cell-text {
-  max-width: 100%;
+  flex-grow: 1; /* Permet au texte de prendre l'espace disponible */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: inline-block;
+  margin: 0 2px; /* Petit espace autour du texte si icônes présentes */
 }
+
+.cell-icon-left, .cell-icon-right {
+  font-size: 14px; /* Taille des flèches */
+  line-height: 1;
+}
+.cell-icon-left {
+  margin-right: 3px;
+}
+.cell-icon-right {
+  margin-left: 3px;
+}
+
 
 /* Colonne des logements (fixe à gauche) */
 .logement-title-header,
@@ -101,29 +113,30 @@ body {
   padding-left: 8px;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Texte à gauche */
+  justify-content: flex-start;
   position: sticky;
   left: 0;
-  z-index: 2; /* Au-dessus des cellules qui défilent */
-  border-right: 2px solid #adb5bd; /* Bordure plus marquée */
+  z-index: 2;
+  border-right: 2px solid #adb5bd;
 }
 
 .logement-title-header {
-  background-color: #f8f9fa; /* Fond d'entête */
-  z-index: 3; /* Au-dessus des noms de logement si superposition */
-  border-top: 1px solid #e9ecef; /* Assurer la bordure du haut */
+  background-color: #f8f9fa;
+  z-index: 3;
+  border-top: 1px solid #e9ecef;
 }
 
 .logement-name {
-  background-color: #ffffff; /* Fond pour les noms de logements */
+  background-color: #ffffff;
   font-size: 12px;
-  /* z-index pour le nom de logement est hérité ou peut être ajusté si nécessaire */
 }
 
 /* Dimanche */
 .sunday {
-  background-color: #e6ffed; /* Vert pastel corrigé */
+  background-color: #7CFC00; /* Vert pelouse */
 }
+/* Ou un vert pelouse plus doux : background-color: #90EE90; */
+
 
 /* Réservations */
 .airbnb {
@@ -136,46 +149,28 @@ body {
   color: white;
 }
 
-/* Styles pour Arrivée / Départ (bordures corrigées) */
-.cell.cell-entry {
-  /* Styles de base pour une cellule d'entrée si nécessaire, mais la couleur vient de la source */
-}
-.cell.cell-exit {
-  /* Styles de base pour une cellule de sortie si nécessaire */
-}
-.cell.cell-entry-exit { 
-  /* Pour les réservations d'un seul jour. Les deux bordures seront appliquées par les règles ci-dessous. */
-  /* Vous pouvez ajouter un style distinctif ici si une résa d'un jour doit être différente. */
-}
+/* Suppression des styles de bordure pour .cell-entry / .cell-exit directs */
+/* Les indicateurs seront les flèches */
+.cell.cell-entry { }
+.cell.cell-exit { }
+.cell.cell-entry-exit { }
 
-.cell-entry.airbnb, .cell-entry-exit.airbnb {
-  border-left: 4px solid #fd8689 !important; /* Rouge Airbnb plus CLAIR */
-}
-.cell-exit.airbnb, .cell-entry-exit.airbnb {
-  border-right: 4px solid #fd8689 !important; /* Rouge Airbnb plus CLAIR */
-}
-
-.cell-entry.booking, .cell-entry-exit.booking {
-  border-left: 4px solid #57a8d6 !important; /* Bleu Booking plus CLAIR */
-}
-.cell-exit.booking, .cell-entry-exit.booking {
-  border-right: 4px solid #57a8d6 !important; /* Bleu Booking plus CLAIR */
-}
+/* Si vous voulez TOUJOURS des bordures EN PLUS des flèches, décommentez et ajustez :
+.cell-entry.airbnb, .cell-entry-exit.airbnb { border-left: 3px solid #fd8689 !important; }
+.cell-exit.airbnb, .cell-entry-exit.airbnb { border-right: 3px solid #fd8689 !important; }
+.cell-entry.booking, .cell-entry-exit.booking { border-left: 3px solid #57a8d6 !important; }
+.cell-exit.booking, .cell-entry-exit.booking { border-right: 3px solid #57a8d6 !important; }
+*/
 
 /* Blocages */
-/* Pour que les "Airbnb (Not available)" apparaissent en rouge avec texte blanc :
-   Votre logique JavaScript (App.jsx) doit appliquer la classe '.airbnb' à ces cellules
-   au lieu de '.blocked-manual' si la source du blocage est Airbnb.
-   Si TOUS les '.blocked-manual' doivent être rouges, modifiez comme ci-dessous.
-*/
-.blocked-manual {
-  background-color: #ff5a5f !important; /* Rouge (pour répondre à la demande de transformer les cases noires en rouge) */
-  color: white !important;             /* Texte en blanc pour être visible sur fond rouge */
+.blocked-manual { /* Pour les blocages manuels qui ne sont pas des "Airbnb Not available" spécifiques */
+  background-color: #6c757d !important; /* Gris foncé / terne */
+  color: white !important;             /* Texte blanc pour visibilité */
 }
 
-.blocked-fake {
+.blocked-fake { /* Pour les blocages "false" ou système courts */
   background-color: #e9ecef !important; /* Gris clair */
-  color: #6c757d !important;             /* Texte gris plus foncé pour meilleure lisibilité */
+  color: #6c757d !important;           /* Texte gris foncé pour contraste */
   font-style: italic;
 }
 
@@ -186,36 +181,23 @@ body {
   bottom: 2px;
   right: 2px;
   background: white;
-  border-radius: 50%; /* Rond */
+  border-radius: 50%;
   width: 22px;
   height: 22px;
-  color: #212529; /* Couleur de l'émoji/texte */
-  z-index: 4; /* Au-dessus du contenu de la cellule */
+  color: #212529;
+  z-index: 4;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #adb5bd; /* Bordure du badge */
-  line-height: 1; /* Pour centrage vertical émoji */
+  border: 1px solid #adb5bd;
+  line-height: 1;
 }
 
-/* Cellule avec ménage (style optionnel pour la cellule entière) */
 .cell.has-cleaning {
-  /* Exemple :
-  border-top: 2px dotted green;
-  */
+  /* Optionnel : style pour la cellule entière si un ménage est prévu */
 }
 
 /* Messages d'erreur/chargement */
-.error-message {
-  color: red;
-  padding: 20px;
-  text-align: center;
-  font-weight: bold;
-}
-.loading-message {
-  padding: 20px;
-  text-align: center;
-  color: #007bff;
-  font-size: 1.1em;
-}
+.error-message { /* ... comme avant ... */ }
+.loading-message { /* ... comme avant ... */ }
