@@ -148,14 +148,14 @@ body {
 }
 
 .cell-entry.airbnb, .cell-entry-exit.airbnb {
-  border-left: 4px solid #fd8689 !important; /* Rouge Airbnb plus clair, !important pour priorité */
+  border-left: 4px solid #000000 !important; /* Rouge Airbnb plus clair, !important pour priorité */
 }
 .cell-exit.airbnb, .cell-entry-exit.airbnb {
-  border-right: 4px solid #fd8689 !important;
+  border-right: 4px solid #350203ea !important;
 }
 
 .cell-entry.booking, .cell-entry-exit.booking {
-  border-left: 4px solid #49a3d9 !important; /* Bleu Booking plus clair */
+  border-left: 4px solid #010a00 !important; /* Bleu Booking plus clair */
 }
 .cell-exit.booking, .cell-entry-exit.booking {
   border-right: 4px solid #49a3d9 !important;
@@ -165,14 +165,14 @@ body {
 /* Blocages */
 .blocked-manual {
   background-color: #343a40 !important;
-  color: #ced4da; /* Texte légèrement visible si besoin (ex: "Bloqué") */
+  color: #ced4da; /* Texte  visible  (ex: "Bloqué") */
   /* Pour un motif hachuré : */
   /* background-image: repeating-linear-gradient(135deg, #343a40, #343a40 5px, #495057 5px, #495057 10px); */
 }
 
 .blocked-fake {
   background-color: #e9ecef !important; /* Gris clair */
-  color: #6c757d;
+  color: #50565c;
   font-style: italic;
 }
 
@@ -186,7 +186,7 @@ body {
   border-radius: 50%; /* Rond */
   width: 22px;
   height: 22px;
-  color: #212529; /* Couleur de l'émoji/texte */
+  color: #276161; /* Couleur de l'émoji/texte */
   z-index: 4; /* Au-dessus du contenu de la cellule */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   display: flex;
