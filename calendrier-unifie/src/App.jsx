@@ -10,16 +10,12 @@ const CLEANING_COMPANY_EMOJIS = {
   "proconcept": "🥊",
   "cleansud": "☀️",
   "naira": "💇"
-  // Exemple: si votre backend envoie "Société Alpha", la clé ici serait "société"
+  // Exemple: si votre backend envoie "Société Alpha Nettoyage", la clé ici serait "société"
 };
 
-// Fonctions utilitaires pures (stables, ne changent pas entre les rendus)
-// Elles opèrent sur les données reçues du backend.
+// Fonctions utilitaires pures pour identifier les types de réservations/blocages
 const isFakeBlockPure = (r) => {
-  if (!r || !r.start || !r.end) return false;
-  // Le backend envoie les événements iCal (y compris les blocages) avec type: 'booking'
-  // et le 'summary' de l'iCal dans le champ 'guest'.
-  if (r.type !== 'booking') return false;
+  if (!r || !r.start || !r.end || r.type !== 'booking') return false;
   const duration = new Date(r.end) - new Date(r.start);
   const guestSummary = r.guest ? r.guest.toLowerCase().trim() : '';
   return duration < 1000 * 60 * 60 * 20 && (!guestSummary || ['not available', 'non disponible'].includes(guestSummary));
@@ -27,12 +23,11 @@ const isFakeBlockPure = (r) => {
 
 const isManuallyBlockedPure = (reservation) => {
   if (reservation.type !== 'booking') return false;
-  // Le backend met le 'summary' de l'iCal dans reservation.guest
   return reservation.source === 'airbnb' && reservation.guest?.toLowerCase().includes('not available') && !reservation.description;
 };
 
 const App = () => {
-  const [allCalendarEvents, setAllCalendarEvents] = useState([]); // Contient TOUTES les données: réservations + ménages directement du backend
+  const [allCalendarEvents, setAllCalendarEvents] = useState([]);
   const [offset, setOffset] = useState(0);
   const [error, setError] = useState(null);
 
@@ -41,7 +36,8 @@ const App = () => {
   useEffect(() => {
     axios.get(`${API_URL}/reservations`)
       .then(res => {
-        setAllCalendarEvents(res.data); // Les données du backend contiennent déjà tout
+        // console.log("Données brutes reçues du backend:", JSON.stringify(res.data, null, 2)); // Décommentez pour déboguer les données reçues
+        setAllCalendarEvents(res.data); // Le backend envoie déjà tout (résas + ménages)
         setError(null);
       })
       .catch(err => {
@@ -55,10 +51,9 @@ const App = () => {
     const uniqueLogementsMap = new Map();
     allCalendarEvents.forEach(item => {
       if (item.logementKey && !uniqueLogementsMap.has(item.logementKey)) {
-        // Le champ 'name' fourni par le backend est le nom du calendrier/logement personnalisé
         uniqueLogementsMap.set(item.logementKey, { 
             logementKey: item.logementKey, 
-            name: item.name || `Logement ${item.logementKey}` // item.name vient du backend
+            name: item.name || `Logement ${item.logementKey}` // item.name est fourni par le backend
         });
       }
     });
@@ -88,7 +83,7 @@ const App = () => {
     const activeReservation = allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
       r?.start && r?.end &&
-      r.type === 'booking' && // Filtrer par type 'booking' (défini par backend)
+      r.type === 'booking' && // On cherche une réservation client
       !isFakeBlockPure(r) &&
       !isManuallyBlockedPure(r) &&
       targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
@@ -100,7 +95,6 @@ const App = () => {
       const endDate = new Date(new Date(activeReservation.end).setHours(0,0,0,0));
       const isEntryDay = targetDateObj.getTime() === startDate.getTime();
       const isExitDay = targetDateObj.getTime() === endDate.getTime();
-      // 'guest' pour les réservations de type 'booking' contient le nom du client (ev.summary du backend)
       return { ...activeReservation, isEntryDay, isExitDay, guestName: activeReservation.guest || '' };
     }
     return null;
@@ -110,7 +104,7 @@ const App = () => {
     return allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
       r?.start && r?.end &&
-      r.type === 'booking' && // Les blocages sont aussi de type 'booking' mais identifiés par leur contenu
+      r.type === 'booking' && // Les blocages sont des événements de type 'booking' avec un contenu spécifique
       targetDateObj >= new Date(new Date(r.start).setHours(0,0,0,0)) &&
       targetDateObj <= new Date(new Date(r.end).setHours(23,59,59,999)) &&
       (isManuallyBlockedPure(r) || isFakeBlockPure(r))
@@ -120,35 +114,31 @@ const App = () => {
   const getCleaningInfoForCell = useCallback((logementKey, targetDateObj) => {
     const task = allCalendarEvents.find(r =>
       r?.logementKey === logementKey &&
-      r.type === 'cleaning' && // Filtrer par type 'cleaning' (défini par backend)
+      r.type === 'cleaning' && // On cherche une tâche de ménage
       r?.start &&
       new Date(new Date(r.start).setHours(0,0,0,0)).getTime() === targetDateObj.getTime()
     );
 
     if (!task) return null;
     
-    // Pour les tâches de type 'cleaning', le backend met le nom du prestataire dans 'assignedCleaner'
-    const companyNameFromBackend = task.assignedCleaner; // VIENT DU BACKEND
+    const companyNameFromBackend = task.assignedCleaner; // Champ fourni par le backend
     const companyKey = companyNameFromBackend?.toLowerCase().trim().split(' ')[0];
     
     return {
-        emoji: CLEANING_COMPANY_EMOJIS[companyKey] || "🧼", // Émoji par défaut
+        emoji: CLEANING_COMPANY_EMOJIS[companyKey] || "🧼",
         companyName: companyNameFromBackend 
     };
   }, [allCalendarEvents]);
 
-
   if (error) {
     return <div className="error-message">{error}</div>;
   }
-  if (logements.length === 0 && allCalendarEvents.length > 0) {
+  if (logements.length === 0 && allCalendarEvents.length > 0 && !error) { // Ajout de !error ici
       return <div className="loading-message">Traitement des données du calendrier...</div>
   }
-  // Condition de chargement initial avant que les données ne soient récupérées
   if (allCalendarEvents.length === 0 && !error) {
     return <div className="loading-message">Chargement du calendrier...</div>;
   }
-
 
   return (
     <div className="calendar-container">
@@ -159,7 +149,6 @@ const App = () => {
       </div>
 
       <div className="calendar-scroll-container">
-        {/* ... (rendu des entêtes de jours et dates, inchangé) ... */}
         <div className="header-row">
           <div className="header-cell logement-title-header"></div>
           {days.map(day => (
@@ -168,7 +157,6 @@ const App = () => {
             </div>
           ))}
         </div>
-
         <div className="header-row">
           <div className="header-cell logement-title-header">Logement</div>
           {days.map(day => (
@@ -203,7 +191,7 @@ const App = () => {
                 cellText = activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '' && !activeReservationDetails.guestName.toLowerCase().includes('not available')
                            ? activeReservationDetails.guestName 
                            : 'Réservé';
-                if (activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '') {
+                if (activeReservationDetails.guestName && activeReservationDetails.guestName.trim() !== '' && !activeReservationDetails.guestName.toLowerCase().includes('not available')) {
                     titleParts.push(`Client: ${activeReservationDetails.guestName}`);
                 } else {
                     titleParts.push("Réservé");
